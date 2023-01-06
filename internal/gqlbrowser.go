@@ -27,11 +27,11 @@ type GQLBrowser struct {
 	tabs              []*container.TabItem
 	queryAdapter      *fieldAdapter
 	mutationAdapter   *fieldAdapter
-	tAdapter          *typesAdapter
-	interfacesAdapter *typesAdapter
-	uAdapter          *typesAdapter
-	eAdapter          *typesAdapter
-	inputAdapter      *typesAdapter
+	tAdapter          *topTypesAdapter
+	interfacesAdapter *topTypesAdapter
+	uAdapter          *topTypesAdapter
+	eAdapter          *topTypesAdapter
+	inputAdapter      *topTypesAdapter
 
 	pathCombo        *widget.Select
 	displayContainer *fyne.Container
@@ -61,7 +61,7 @@ func (g *GQLBrowser) setupBody() {
 
 	g.typeTabs = container.NewDocTabs()
 	g.typeTabs.SetTabLocation(container.TabLocationLeading)
-	g.displayContainer = container.NewHBox()
+	g.displayContainer = container.NewGridWithRows(1)
 
 	displayScroll := container.NewScroll(g.displayContainer)
 	displayScroll.Direction = container.ScrollHorizontalOnly
@@ -90,6 +90,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 			break
 		}
 	}
+	g.displayContainer.RemoveAll()
 
 	err := json.Unmarshal([]byte(endpoint.Payload), &g.schema)
 	if err != nil {
@@ -122,11 +123,11 @@ func (g *GQLBrowser) pathSelected(path string) {
 		g.typeTabs.Append(mutationTab)
 	}
 
-	g.tAdapter = &typesAdapter{}
-	g.interfacesAdapter = &typesAdapter{}
-	g.uAdapter = &typesAdapter{}
-	g.eAdapter = &typesAdapter{}
-	g.inputAdapter = &typesAdapter{}
+	g.tAdapter = &topTypesAdapter{}
+	g.interfacesAdapter = &topTypesAdapter{}
+	g.uAdapter = &topTypesAdapter{}
+	g.eAdapter = &topTypesAdapter{}
+	g.inputAdapter = &topTypesAdapter{}
 
 	for _, t := range g.schema.Types {
 		if query != nil && *t.Name == *query.Name {

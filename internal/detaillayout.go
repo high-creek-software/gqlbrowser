@@ -34,7 +34,7 @@ func newDetailLayout(title string, subTitle *string, remove func(container *fyne
 	titleWrapper.Add(widget.NewLabel(sub))
 	titleWrapper.Add(widget.NewSeparator())
 
-	//var child *fyne.Container
+	//dl.segmentWrapper = container.NewGridWithColumns(1)
 	//if len(rootType.Fields) > 0 && len(args) > 0 {
 	//	child = container.NewGridWithRows(2, inputBorder, propertiesBorder)
 	//} else if len(args) > 0 {
@@ -58,6 +58,8 @@ func (dl *detailLayout) addArgs(args []fieldglass.InputValue) {
 	//ia := &inputAdapter{inputs: args}
 	//inputList := widget.NewList(ia.count, ia.createTemplate, ia.updateTemplate)
 	//inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, inputList)
+	//dl.segmentWrapper.Add(inputBorder)
+	//dl.segmentWrapper.Refresh()
 
 	argSegment := container.NewVBox()
 	for _, arg := range args {
@@ -80,7 +82,7 @@ func (dl *detailLayout) addArgs(args []fieldglass.InputValue) {
 }
 
 func (dl *detailLayout) addProperties(t *fieldglass.Type) {
-	//adapter := &fieldAdapter{fields: rootType.Fields}
+	//adapter := &fieldAdapter{fields: t.Fields}
 	//list := widget.NewList(adapter.count, adapter.createTemplate, adapter.updateTemplate)
 	//propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, list)
 	//list.OnSelected = func(id widget.ListItemID) {
@@ -88,8 +90,9 @@ func (dl *detailLayout) addProperties(t *fieldglass.Type) {
 	//	if f.Type.RootType() == fieldglass.TypeKindScalar {
 	//		return
 	//	}
-	//	g.showType(*f.Type, f.Args)
+	//	dl.typeSelected(*f.Type)
 	//}
+	//dl.segmentWrapper.Add(propertiesBorder)
 
 	fieldSegment := container.NewVBox()
 	for _, fld := range t.Fields {
