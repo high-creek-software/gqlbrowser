@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/json"
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -192,57 +191,74 @@ func (g *GQLBrowser) pathSelected(path string) {
 
 func (g *GQLBrowser) querySelected(id widget.ListItemID) {
 	f := g.queryAdapter.getItem(id)
-	g.showType(*f.Type, f.Args)
+	detail := newDetailLayout(f.Name, f.Description, g.remove, g.showType)
+	if len(f.Args) > 0 {
+		detail.addArgs(f.Args)
+	}
+	if rootType, err := g.schema.FindType(f.Type.RootName()); err == nil {
+		detail.addProperties(rootType)
+	}
+	g.displayContainer.Add(detail.Container)
 }
 
 func (g *GQLBrowser) mutationSelected(id widget.ListItemID) {
 	f := g.mutationAdapter.getItem(id)
-	g.showType(*f.Type, f.Args)
+	detail := newDetailLayout(f.Name, f.Description, g.remove, g.showType)
+	if len(f.Args) > 0 {
+		detail.addArgs(f.Args)
+	}
+	g.displayContainer.Add(detail.Container)
 }
 
 func (g *GQLBrowser) typeSelected(id widget.ListItemID) {
 	t := g.tAdapter.getItem(id)
-	g.showType(t, t.InputFields)
+	g.showType(t)
 }
 
 func (g *GQLBrowser) interfaceSelected(id widget.ListItemID) {
 	t := g.interfacesAdapter.getItem(id)
-	g.showType(t, t.InputFields)
+	g.showType(t)
 }
 
 func (g *GQLBrowser) unionSelected(id widget.ListItemID) {
 	t := g.uAdapter.getItem(id)
-	g.showType(t, t.InputFields)
+	g.showType(t)
 }
 
 func (g *GQLBrowser) enumSelected(id widget.ListItemID) {
 	t := g.eAdapter.getItem(id)
-	g.showType(t, t.InputFields)
+	g.showType(t)
 }
 
 func (g *GQLBrowser) inputSelected(id widget.ListItemID) {
 	t := g.inputAdapter.getItem(id)
-	g.showType(t, t.InputFields)
+	g.showType(t)
 }
 
-func (g *GQLBrowser) showType(t fieldglass.Type, args []fieldglass.InputValue) {
-	var border *fyne.Container
-	title := widget.NewRichTextFromMarkdown(fmt.Sprintf("# %s", t.RootName()))
+func (g *GQLBrowser) remove(cont *fyne.Container) {
+	g.displayContainer.Remove(cont)
+}
 
-	closeBtn := widget.NewButtonWithIcon("Close", theme.ContentRemoveIcon(), func() {
-		g.displayContainer.Remove(border)
-	})
+func (g *GQLBrowser) showType(t fieldglass.Type) {
+
 	rootType, _ := g.schema.FindType(t.RootName())
-	ia := &inputAdapter{inputs: args}
-	inputList := widget.NewList(ia.count, ia.createTemplate, ia.updateTemplate)
-	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, inputList)
-
-	adapter := &fieldAdapter{fields: rootType.Fields}
-	list := widget.NewList(adapter.count, adapter.createTemplate, adapter.updateTemplate)
-	propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, list)
-	
-	border = container.NewBorder(container.NewVBox(container.NewHBox(widget.NewLabel("            "), title, widget.NewLabel("            ")), widget.NewSeparator()), closeBtn, nil, nil, container.NewPadded(container.NewGridWithRows(2, inputBorder, propertiesBorder)))
-	g.displayContainer.Add(border)
+	detail := newDetailLayout(t.RootName(), nil, g.remove, g.showType)
+	if len(rootType.Interfaces) > 0 {
+		detail.addTypes("Implements", rootType.Interfaces)
+	}
+	if len(rootType.EnumValues) > 0 {
+		detail.addEnums(rootType.EnumValues)
+	}
+	if len(rootType.InputFields) > 0 {
+		detail.addArgs(rootType.InputFields)
+	}
+	if len(rootType.Fields) > 0 {
+		detail.addProperties(rootType)
+	}
+	if len(rootType.PossibleTypes) > 0 {
+		detail.addTypes("Union", rootType.PossibleTypes)
+	}
+	g.displayContainer.Add(detail.Container)
 }
 
 func (g *GQLBrowser) settingsTouched() {
