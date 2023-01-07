@@ -6,7 +6,6 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/high-creek-software/gqlbrowser/internal/storage"
@@ -36,15 +35,19 @@ type GQLBrowser struct {
 	pathCombo        *widget.Select
 	displayContainer *fyne.Container
 
+	endpointAdapter *endpointAdapter
+	endpointTable   *widget.Table
+
 	schema fieldglass.Schema
 }
 
 func NewGQLBrowser() *GQLBrowser {
-	gqlb := &GQLBrowser{manager: storage.NewManager(), app: app.NewWithID("github.com/high-creek-software/gqlbrowser")}
+	gqlb := &GQLBrowser{app: app.NewWithID("github.com/high-creek-software/gqlbrowser")}
 	gqlb.mainWindow = gqlb.app.NewWindow("GQL Browser")
-	gqlb.mainWindow.Resize(fyne.NewSize(1200, 700))
+	gqlb.mainWindow.Resize(fyne.NewSize(1500, 800))
 	gqlb.app.Lifecycle().SetOnStarted(gqlb.appStarted)
 	gqlb.client = fieldglass.NewFieldGlass()
+	gqlb.manager = storage.NewManager(gqlb.client)
 
 	gqlb.setupBody()
 
@@ -57,7 +60,7 @@ func (g *GQLBrowser) setupBody() {
 
 	settingsBtn := widget.NewButtonWithIcon("", theme.SettingsIcon(), g.settingsTouched)
 
-	form := container.New(layout.NewFormLayout(), settingsBtn, g.pathCombo)
+	form := container.NewBorder(nil, nil, nil, settingsBtn, g.pathCombo)
 
 	g.typeTabs = container.NewDocTabs()
 	g.typeTabs.SetTabLocation(container.TabLocationLeading)
@@ -73,12 +76,7 @@ func (g *GQLBrowser) setupBody() {
 }
 
 func (g *GQLBrowser) appStarted() {
-	endpoints, err := g.manager.List()
-	if err != nil {
-		dialog.ShowError(err, g.mainWindow)
-		return
-	}
-	g.endpoints = endpoints
+	g.loadEndpoints()
 	g.updatePathList()
 }
 
@@ -208,6 +206,9 @@ func (g *GQLBrowser) mutationSelected(id widget.ListItemID) {
 	if len(f.Args) > 0 {
 		detail.addArgs(f.Args)
 	}
+	if rootType, err := g.schema.FindType(f.Type.RootName()); err == nil {
+		detail.addProperties(rootType)
+	}
 	g.displayContainer.Add(detail.Container)
 }
 
@@ -268,53 +269,79 @@ func (g *GQLBrowser) settingsTouched() {
 	}
 	g.setupWindow = g.app.NewWindow("Setup")
 	g.setupWindow.SetOnClosed(g.setupClosed)
-	g.setupWindow.Resize(fyne.NewSize(600, 300))
-	g.setupWindow.CenterOnScreen()
+	g.setupWindow.Resize(fyne.NewSize(950, 600))
 
 	pathEntry := widget.NewEntry()
 
 	pathItem := widget.NewFormItem("Path:", pathEntry)
 	inputForm := widget.NewForm(pathItem)
 
+	g.endpointAdapter = newEndpointAdapter(g.refreshEndpoint, g.deleteEndpoint)
+	g.endpointAdapter.resetAll(g.endpoints)
+	g.endpointTable = widget.NewTable(g.endpointAdapter.count, g.endpointAdapter.createTemplate, g.endpointAdapter.updateTemplate)
+	g.endpointTable.SetColumnWidth(0, 350)
+	g.endpointTable.SetColumnWidth(1, 200)
+	g.endpointTable.SetColumnWidth(2, 200)
+
 	saveBtn := widget.NewButtonWithIcon("Save", theme.DocumentSaveIcon(), func() {
 		path := pathEntry.Text
 		if path == "" {
 			return
 		}
-		g.setupWindow.Close()
-		go g.savePath(path)
+
+		g.addEndpoint(path)
 	})
 
-	g.setupWindow.SetContent(container.NewVBox(
-		layout.NewSpacer(),
+	g.setupWindow.SetContent(container.NewBorder(
 		container.NewVBox(inputForm, saveBtn),
-		layout.NewSpacer(),
+		nil,
+		nil,
+		nil,
+		container.NewPadded(g.endpointTable),
 	))
 
 	g.setupWindow.Show()
 }
 
-func (g *GQLBrowser) savePath(path string) {
-	schema, err := g.client.Load(path)
+func (g *GQLBrowser) refreshEndpoint(e storage.Endpoint) {
+	err := g.manager.Update(e)
 	if err != nil {
 		dialog.ShowError(err, g.mainWindow)
 		return
 	}
+	g.loadEndpoints()
+}
 
-	payload, err := json.Marshal(schema)
+func (g *GQLBrowser) deleteEndpoint(e storage.Endpoint) {
+	err := g.manager.Delete(e)
 	if err != nil {
 		dialog.ShowError(err, g.mainWindow)
 		return
 	}
+	g.loadEndpoints()
+}
 
-	endpoint, err := g.manager.Store(path, string(payload))
+func (g *GQLBrowser) addEndpoint(path string) {
+	endpoint, err := g.manager.Create(path)
 	if err != nil {
 		dialog.ShowError(err, g.mainWindow)
 		return
 	}
-
+	g.endpointAdapter.addEndpoint(endpoint)
 	g.endpoints = append(g.endpoints, endpoint)
 	g.updatePathList()
+}
+
+func (g *GQLBrowser) loadEndpoints() {
+	endpoints, err := g.manager.List()
+	if err != nil {
+		dialog.ShowError(err, g.mainWindow)
+		return
+	}
+	g.endpoints = endpoints
+	if g.endpointAdapter != nil {
+		g.endpointAdapter.resetAll(g.endpoints)
+	}
 }
 
 func (g *GQLBrowser) updatePathList() {
@@ -329,6 +356,8 @@ func (g *GQLBrowser) updatePathList() {
 
 func (g *GQLBrowser) setupClosed() {
 	g.setupWindow = nil
+	g.endpointTable = nil
+	g.endpointAdapter = nil
 }
 
 func (g *GQLBrowser) Start() {

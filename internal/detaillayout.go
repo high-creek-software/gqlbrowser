@@ -44,11 +44,12 @@ func newDetailLayout(title string, subTitle *string, remove func(container *fyne
 	//}
 	child := container.NewScroll(dl.segmentWrapper)
 	child.Direction = container.ScrollVerticalOnly
-	dl.Container = container.NewBorder(titleWrapper,
+	dl.Container = container.NewPadded(container.NewBorder(titleWrapper,
 		dl.closeBtn,
 		nil,
 		nil,
 		container.NewPadded(child),
+	),
 	)
 
 	return dl

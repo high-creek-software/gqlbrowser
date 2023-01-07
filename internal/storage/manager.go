@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"encoding/json"
 	"errors"
+	"gitlab.com/high-creek-software/fieldglass"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
@@ -15,8 +17,10 @@ const (
 )
 
 type Manager interface {
-	Store(path, payload string) (Endpoint, error)
+	Create(path string) (Endpoint, error)
 	List() ([]Endpoint, error)
+	Update(endpoint Endpoint) error
+	Delete(endpoint Endpoint) error
 }
 
 type ManagerImpl struct {
@@ -25,11 +29,13 @@ type ManagerImpl struct {
 	dbPath string
 	db     *gorm.DB
 
+	client fieldglass.FieldGlass
+
 	*endpointRepo
 }
 
-func NewManager() Manager {
-	m := &ManagerImpl{applicationDirectory: getApplicationDirectory()}
+func NewManager(client fieldglass.FieldGlass) Manager {
+	m := &ManagerImpl{applicationDirectory: getApplicationDirectory(), client: client}
 
 	err := os.Mkdir(m.applicationDirectory, os.ModePerm)
 	if err != nil && !errors.Is(err, os.ErrExist) {
@@ -45,4 +51,37 @@ func NewManager() Manager {
 	m.endpointRepo = newEndpointRepo(m.db)
 
 	return m
+}
+
+func (m *ManagerImpl) Create(path string) (Endpoint, error) {
+	schema, err := m.client.Load(path)
+	if err != nil {
+		return Endpoint{}, err
+	}
+
+	payload, err := json.Marshal(schema)
+	if err != nil {
+		return Endpoint{}, err
+	}
+
+	endpoint, err := m.Store(path, string(payload))
+	if err != nil {
+		return Endpoint{}, err
+	}
+
+	return endpoint, nil
+}
+
+func (m *ManagerImpl) Update(endpoint Endpoint) error {
+	schema, err := m.client.Load(endpoint.Path)
+	if err != nil {
+		return err
+	}
+
+	payload, err := json.Marshal(schema)
+	if err != nil {
+		return err
+	}
+
+	return m.endpointRepo.update(endpoint.ID, string(payload))
 }

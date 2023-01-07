@@ -12,6 +12,7 @@ type Endpoint struct {
 	Path      string
 	Payload   string
 	CreatedAt time.Time
+	UpdatedAt *time.Time
 }
 
 type endpointRepo struct {
@@ -40,4 +41,13 @@ func (e *endpointRepo) List() ([]Endpoint, error) {
 	err := e.db.Find(&eps).Error
 
 	return eps, err
+}
+
+func (e *endpointRepo) update(id, schema string) error {
+	now := time.Now()
+	return e.db.Model(&Endpoint{ID: id}).Updates(Endpoint{Payload: schema, UpdatedAt: &now}).Error
+}
+
+func (e *endpointRepo) Delete(endpoint Endpoint) error {
+	return e.db.Delete(&endpoint).Error
 }
