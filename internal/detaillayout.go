@@ -24,7 +24,7 @@ func newDetailLayout(title string, subTitle *string, remove func(container *fyne
 	dl := &detailLayout{typeSelected: typeSelected}
 	dl.title = widget.NewRichTextFromMarkdown(fmt.Sprintf("# %s", title))
 	dl.closeBtn = widget.NewButtonWithIcon("Close", theme.ContentRemoveIcon(), func() { remove(dl.Container) })
-	dl.segmentWrapper = container.NewVBox()
+	dl.segmentWrapper = container.NewMax()
 
 	titleWrapper := container.NewVBox(container.NewHBox(widget.NewLabel("            "), dl.title, widget.NewLabel("            ")))
 	sub := ""
@@ -34,14 +34,6 @@ func newDetailLayout(title string, subTitle *string, remove func(container *fyne
 	titleWrapper.Add(widget.NewLabel(sub))
 	titleWrapper.Add(widget.NewSeparator())
 
-	//dl.segmentWrapper = container.NewGridWithColumns(1)
-	//if len(rootType.Fields) > 0 && len(args) > 0 {
-	//	child = container.NewGridWithRows(2, inputBorder, propertiesBorder)
-	//} else if len(args) > 0 {
-	//	child = inputBorder
-	//} else if len(rootType.Fields) > 0 {
-	//	child = propertiesBorder
-	//}
 	child := container.NewScroll(dl.segmentWrapper)
 	child.Direction = container.ScrollVerticalOnly
 	dl.Container = container.NewPadded(container.NewBorder(titleWrapper,
@@ -55,66 +47,38 @@ func newDetailLayout(title string, subTitle *string, remove func(container *fyne
 	return dl
 }
 
-func (dl *detailLayout) addArgs(args []fieldglass.InputValue) {
-	//ia := &inputAdapter{inputs: args}
-	//inputList := widget.NewList(ia.count, ia.createTemplate, ia.updateTemplate)
-	//inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, inputList)
-	//dl.segmentWrapper.Add(inputBorder)
-	//dl.segmentWrapper.Refresh()
+func (dl *detailLayout) buildArgs(args []fieldglass.InputValue) *fyne.Container {
+	ia := &inputAdapter{inputs: args}
+	inputList := widget.NewList(ia.count, ia.createTemplate, ia.updateTemplate)
+	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, inputList)
 
-	argSegment := container.NewVBox()
-	for _, arg := range args {
-		func(a fieldglass.InputValue) {
-			name := widget.NewHyperlink(arg.Name+":"+arg.Type.FormatName(), nil)
-			name.OnTapped = func() {
-				dl.typeSelected(*a.Type)
-			}
-			if arg.Description != nil && *arg.Description != "" {
-				desc := widget.NewLabel(*arg.Description)
-				desc.TextStyle = fyne.TextStyle{Italic: true}
-				argSegment.Add(container.NewVBox(name, desc))
-			} else {
-				argSegment.Add(name)
-			}
-		}(arg)
+	inputList.OnSelected = func(id widget.ListItemID) {
+		i := ia.getItem(id)
+		if i.Type.RootType() == fieldglass.TypeKindScalar {
+			return
+		}
+		dl.typeSelected(*i.Type)
 	}
 
-	dl.segmentWrapper.Add(container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, argSegment))
+	return inputBorder
 }
 
-func (dl *detailLayout) addProperties(t *fieldglass.Type) {
-	//adapter := &fieldAdapter{fields: t.Fields}
-	//list := widget.NewList(adapter.count, adapter.createTemplate, adapter.updateTemplate)
-	//propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, list)
-	//list.OnSelected = func(id widget.ListItemID) {
-	//	f := adapter.getItem(id)
-	//	if f.Type.RootType() == fieldglass.TypeKindScalar {
-	//		return
-	//	}
-	//	dl.typeSelected(*f.Type)
-	//}
-	//dl.segmentWrapper.Add(propertiesBorder)
-
-	fieldSegment := container.NewVBox()
-	for _, fld := range t.Fields {
-		func(f fieldglass.Field) {
-			name := widget.NewHyperlink(f.Name+":"+f.Type.FormatName(), nil)
-			name.OnTapped = func() {
-				dl.typeSelected(*f.Type)
-			}
-			if f.Description != nil && *f.Description != "" {
-				desc := widget.NewLabel(*f.Description)
-				desc.TextStyle = fyne.TextStyle{Italic: true}
-				fieldSegment.Add(container.NewVBox(name, desc))
-			} else {
-				fieldSegment.Add(name)
-			}
-		}(fld)
+func (dl *detailLayout) buildProperties(t *fieldglass.Type) *fyne.Container {
+	adapter := &fullFieldAdapter{fields: t.Fields}
+	list := widget.NewList(adapter.count, adapter.createTemplate, adapter.updateTemplate)
+	propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, list)
+	list.OnSelected = func(id widget.ListItemID) {
+		f := adapter.getItem(id)
+		if f.Type.RootType() == fieldglass.TypeKindScalar {
+			return
+		}
+		dl.typeSelected(*f.Type)
 	}
-	dl.segmentWrapper.Add(container.NewBorder(widget.NewRichTextFromMarkdown("## Fields"), nil, nil, nil, fieldSegment))
+
+	return propertiesBorder
 }
 
-func (dl *detailLayout) addTypes(name string, ts []fieldglass.Type) {
+func (dl *detailLayout) buildTypes(name string, ts []fieldglass.Type) *fyne.Container {
 	typeSegment := container.NewVBox()
 	for _, typ := range ts {
 		func(t fieldglass.Type) {
@@ -131,10 +95,10 @@ func (dl *detailLayout) addTypes(name string, ts []fieldglass.Type) {
 			}
 		}(typ)
 	}
-	dl.segmentWrapper.Add(container.NewBorder(widget.NewRichTextFromMarkdown(fmt.Sprintf("## %s", name)), nil, nil, nil, typeSegment))
+	return container.NewBorder(widget.NewRichTextFromMarkdown(fmt.Sprintf("## %s", name)), nil, nil, nil, typeSegment)
 }
 
-func (dl *detailLayout) addEnums(es []fieldglass.EnumValue) {
+func (dl *detailLayout) buildEnums(es []fieldglass.EnumValue) *fyne.Container {
 	enumSegment := container.NewVBox()
 	for _, e := range es {
 		func(en fieldglass.EnumValue) {
@@ -149,5 +113,5 @@ func (dl *detailLayout) addEnums(es []fieldglass.EnumValue) {
 		}(e)
 	}
 
-	dl.segmentWrapper.Add(container.NewBorder(widget.NewRichTextFromMarkdown("## Enum Values"), nil, nil, nil, enumSegment))
+	return container.NewBorder(widget.NewRichTextFromMarkdown("## Enum Values"), nil, nil, nil, enumSegment)
 }

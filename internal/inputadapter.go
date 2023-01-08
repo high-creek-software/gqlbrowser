@@ -15,12 +15,16 @@ func (ia *inputAdapter) count() int {
 }
 
 func (ia *inputAdapter) createTemplate() fyne.CanvasObject {
-	return widget.NewLabel("template")
+	return newDetailRow("temp", "temp", nil)
 }
 
 func (ia *inputAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {
 	iv := ia.getItem(id)
-	co.(*widget.Label).SetText(iv.Name + ":" + iv.Type.FormatName())
+	dr := co.(*detailRow)
+	dr.name = iv.Name + ":"
+	dr.typeName = iv.Type.FormatName()
+	dr.defaultValue = iv.DefaultValue
+	dr.Refresh()
 }
 
 func (ia *inputAdapter) getItem(id widget.ListItemID) fieldglass.InputValue {

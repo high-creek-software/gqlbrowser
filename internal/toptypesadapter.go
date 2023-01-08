@@ -17,12 +17,14 @@ func (ta *topTypesAdapter) count() int {
 }
 
 func (ta *topTypesAdapter) createTemplate() fyne.CanvasObject {
-	return widget.NewLabel("template")
+	return newNameTypeRow("", "temp")
 }
 
 func (ta *topTypesAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {
 	t := ta.getItem(id)
-	co.(*widget.Label).SetText(*t.Name)
+	row := co.(*nameTypeRow)
+	row.typ = *t.Name
+	row.Refresh()
 }
 
 func (ta *topTypesAdapter) getItem(id widget.ListItemID) fieldglass.Type {

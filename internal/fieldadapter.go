@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 	"gitlab.com/high-creek-software/fieldglass"
 )
@@ -12,21 +13,28 @@ type fieldAdapter struct {
 	fields []fieldglass.Field
 }
 
+func (n *fieldAdapter) Cursor() desktop.Cursor {
+	return desktop.PointerCursor
+}
+
 func (fa *fieldAdapter) count() int {
 	return len(fa.fields)
 }
 
 func (fa *fieldAdapter) createTemplate() fyne.CanvasObject {
-	return widget.NewLabel("template")
+	return newNameTypeRow("temp", "temp")
 }
 
 func (fa *fieldAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {
 	f := fa.getItem(id)
 	args := ""
-	if f.Args != nil && len(f.Args) > 0 {
+	if len(f.Args) > 0 {
 		args = "(...)"
 	}
-	co.(*widget.Label).SetText(f.Name + args + ":" + f.Type.FormatName())
+	row := co.(*nameTypeRow)
+	row.name = f.Name + args + ":"
+	row.typ = f.Type.FormatName()
+	row.Refresh()
 }
 
 func (fa *fieldAdapter) getItem(id widget.ListItemID) fieldglass.Field {
