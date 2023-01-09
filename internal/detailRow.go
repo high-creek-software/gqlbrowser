@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"github.com/rs/xid"
 )
 
@@ -32,7 +33,7 @@ func (d *detailRow) CreateRenderer() fyne.WidgetRenderer {
 	typeText := canvas.NewText("", theme.PrimaryColor())
 	descriptionLbl := widget.NewLabel("")
 	descriptionLbl.Wrapping = fyne.TextWrapWord
-	cautionLbl := widget.NewLabel("⚠️")
+	cautionLbl := widget.NewIcon(resources.CautionResource)
 	deprecationLbl := widget.NewLabel("")
 	deprecationLbl.Wrapping = fyne.TextWrapWord
 	defaultTitle := widget.NewLabel("Default Value:")
@@ -80,7 +81,7 @@ type detailRowRenderer struct {
 
 	descriptionLbl *widget.Label
 
-	cautionLbl     *widget.Label
+	cautionLbl     *widget.Icon
 	deprecationLbl *widget.Label
 	defaultTitle   *widget.Label
 	defaultLbl     *widget.Label
@@ -91,7 +92,6 @@ func (d *detailRowRenderer) Destroy() {
 }
 
 func (d *detailRowRenderer) Layout(size fyne.Size) {
-	//log.Println("Layout:", size.Width, "X", size.Height, d.dr.uid, time.Now())
 	prevSize := fyne.NewSize(0, 0)
 	topLeft := fyne.NewPos(theme.Padding(), theme.Padding()+10)
 	d.nameLbl.Move(topLeft)
@@ -104,14 +104,17 @@ func (d *detailRowRenderer) Layout(size fyne.Size) {
 		topLeft = topLeft.Add(fyne.NewPos(0, nameSize.Height+theme.Padding()))
 		descSize := d.descriptionSize()
 		d.descriptionLbl.Move(topLeft)
-		d.descriptionLbl.Resize(fyne.NewSize(size.Width-2*theme.Padding(), size.Height))
+		descSize.Width = size.Width
+		d.descriptionLbl.Resize(descSize)
+		//d.descriptionLbl.Resize(fyne.NewSize(size.Width, size.Height))
 		prevSize = descSize
 	}
 
-	if d.deprecationLbl.Visible() {
+	if d.dr.isDeprecated {
 		topLeft = topLeft.Add(fyne.NewPos(0, prevSize.Height+15+theme.Padding()))
-		d.cautionLbl.Move(topLeft)
-		deprecTopLeft := topLeft.Add(fyne.NewSize(30, 0))
+		d.cautionLbl.Resize(fyne.NewSize(32, 32))
+		d.cautionLbl.Move(topLeft.Add(fyne.NewPos(8, 0)))
+		deprecTopLeft := topLeft.Add(fyne.NewSize(38, 0))
 		d.deprecationLbl.Move(deprecTopLeft)
 		d.deprecationLbl.Resize(fyne.NewSize(size.Width-2*theme.Padding(), size.Height))
 		prevSize = d.deprecationSize()
@@ -128,15 +131,20 @@ func (d *detailRowRenderer) Layout(size fyne.Size) {
 
 func (d *detailRowRenderer) MinSize() fyne.Size {
 
-	nameSize := d.nameSize()
-	typeSize := d.typeSize()
-	descSize := d.descriptionSize()
-	deprecSize := d.deprecationSize()
-	defValSize := d.defaultValueSize()
+	nameSize := d.nameLbl.MinSize()
+	typeSize := d.typeText.MinSize()
 
-	height := nameSize.Height + descSize.Height + deprecSize.Height + defValSize.Height + 30 + 4*theme.Padding()
+	descSize := d.descriptionLbl.MinSize()
+	//d.descriptionLbl.Resize(d.dr.Size())
+
+	deprecSize := d.deprecationLbl.MinSize()
+	cautionSize := d.cautionLbl.MinSize()
+	defValSize := d.defaultLbl.MinSize()
+
+	height := nameSize.Height + descSize.Height + fyne.Max(cautionSize.Height, deprecSize.Height) + defValSize.Height + 4*theme.Padding()
 	width := fyne.Max(nameSize.Width+typeSize.Width, descSize.Width) + 2*theme.Padding()
-	width = fyne.Max(width, descSize.Width)
+	width = fyne.Max(width, deprecSize.Width)
+	width = fyne.Max(width, defValSize.Width)
 	return fyne.NewSize(width, height)
 }
 

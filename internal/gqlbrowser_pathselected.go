@@ -19,6 +19,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 	}
 	g.displayContainer.RemoveAll()
 
+	g.schema = fieldglass.Schema{}
 	err := json.Unmarshal([]byte(endpoint.Payload), &g.schema)
 	if err != nil {
 		dialog.ShowError(err, g.mainWindow)

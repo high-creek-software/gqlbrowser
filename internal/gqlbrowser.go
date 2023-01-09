@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"github.com/high-creek-software/gqlbrowser/internal/storage"
 	"gitlab.com/high-creek-software/fieldglass"
 )
@@ -42,6 +43,7 @@ type GQLBrowser struct {
 
 func NewGQLBrowser() *GQLBrowser {
 	gqlb := &GQLBrowser{app: app.NewWithID("github.com/high-creek-software/gqlbrowser")}
+	gqlb.app.SetIcon(resources.IconResource)
 	gqlb.mainWindow = gqlb.app.NewWindow("GQL Browser")
 	gqlb.mainWindow.Resize(fyne.NewSize(1500, 800))
 	gqlb.app.Lifecycle().SetOnStarted(gqlb.appStarted)

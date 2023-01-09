@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866666"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="caution.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="4"
+     inkscape:cx="62.25"
+     inkscape:cy="75.125"
+     inkscape:window-width="2560"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="text2047" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       sodipodi:type="star"
+       style="fill:#ffdd55;fill-opacity:1;stroke:#ffdd55;stroke-width:1.56701;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="path1626"
+       inkscape:flatsided="false"
+       sodipodi:sides="3"
+       sodipodi:cx="12.370563"
+       sodipodi:cy="6.9370441"
+       sodipodi:r1="12.443894"
+       sodipodi:r2="6.2219472"
+       sodipodi:arg1="0.52359878"
+       sodipodi:arg2="1.5707963"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       d="m 23.147291,13.158991 -10.776728,0 -10.7767291,0 5.3883642,-9.3329203 5.3883649,-9.3329209 5.388364,9.3329206 z"
+       inkscape:transform-center-y="-5.1888301"
+       transform="matrix(1.4693162,0,0,1.667912,-1.2429346,10.551719)" />
+    <g
+       aria-label="!"
+       transform="scale(1.112656,0.89875037)"
+       id="text2047"
+       style="font-size:25.4px;fill:#1a1a1a;stroke-width:2.77703;stroke-linejoin:round">
+      <path
+         d="m 16.285638,11.586868 h -2.1082 v 8.5852 l 0.5588,5.6642 h 0.9906 l 0.5588,-5.6642 z m 0,15.875 h -2.1336 v 2.6416 h 2.1336 z"
+         style="fill:#333333"
+         id="path2224" />
+    </g>
+  </g>
+</svg>
