@@ -80,6 +80,11 @@ func (g *GQLBrowser) setupBody() {
 func (g *GQLBrowser) appStarted() {
 	g.loadEndpoints()
 	g.updatePathList()
+
+	path := g.app.Preferences().String("selected-path")
+	if path != "" {
+		g.pathCombo.SetSelected(path)
+	}
 }
 
 func (g *GQLBrowser) querySelected(id widget.ListItemID) {
@@ -277,4 +282,8 @@ func (g *GQLBrowser) setupClosed() {
 
 func (g *GQLBrowser) Start() {
 	g.mainWindow.ShowAndRun()
+}
+
+func (g *GQLBrowser) saveSelectedEndpoint(path string) {
+	g.app.Preferences().SetString("selected-path", path)
 }

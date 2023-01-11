@@ -5,18 +5,19 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/high-creek-software/gqlbrowser/internal/storage"
 	"gitlab.com/high-creek-software/fieldglass"
 )
 
 func (g *GQLBrowser) pathSelected(path string) {
-	var endpoint storage.Endpoint
+	/*var endpoint storage.Endpoint
 	for _, e := range g.endpoints {
 		if e.Path == path {
 			endpoint = e
 			break
 		}
-	}
+	}*/
+	endpoint := g.endpoints[g.pathCombo.SelectedIndex()]
+	g.saveSelectedEndpoint(path)
 	g.displayContainer.RemoveAll()
 
 	g.schema = fieldglass.Schema{}
