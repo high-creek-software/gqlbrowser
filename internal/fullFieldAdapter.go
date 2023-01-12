@@ -11,6 +11,7 @@ var _ adapter[fieldglass.Field] = (*fullFieldAdapter)(nil)
 
 type fullFieldAdapter struct {
 	fields []fieldglass.Field
+	list   *widget.List
 }
 
 func (f *fullFieldAdapter) Cursor() desktop.Cursor {
@@ -28,16 +29,10 @@ func (fa *fullFieldAdapter) createTemplate() fyne.CanvasObject {
 func (fa *fullFieldAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {
 	f := fa.getItem(id)
 	dr := co.(*detailRow)
-	args := ""
-	if len(f.Args) > 0 {
-		args = "(...)"
+	dr.updateField(f)
+	if fa.list != nil {
+		fa.list.SetItemHeight(id, dr.MinSize().Height)
 	}
-	dr.name = f.Name + args + ":"
-	dr.typeName = f.Type.FormatName()
-	dr.description = f.Description
-	dr.isDeprecated = f.IsDeprecated
-	dr.deprecationReason = f.DeprecationReason
-	dr.Refresh()
 }
 
 func (fa *fullFieldAdapter) getItem(id widget.ListItemID) fieldglass.Field {

@@ -8,6 +8,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"github.com/rs/xid"
+	"gitlab.com/high-creek-software/fieldglass"
+	"sync"
 )
 
 type detailRow struct {
@@ -22,6 +24,8 @@ type detailRow struct {
 	deprecationReason *string
 
 	defaultValue *string
+
+	locker sync.RWMutex
 }
 
 func (d *detailRow) Cursor() desktop.Cursor {
@@ -74,6 +78,30 @@ func newDetailRowFull(name, typeName string, description, deprecationReason, def
 	return dr
 }
 
+func (dr *detailRow) updateField(f fieldglass.Field) {
+	dr.locker.Lock()
+	args := ""
+	if len(f.Args) > 0 {
+		args = "(...)"
+	}
+	dr.name = f.Name + args + ":"
+	dr.typeName = f.Type.FormatName()
+	dr.description = f.Description
+	dr.isDeprecated = f.IsDeprecated
+	dr.deprecationReason = f.DeprecationReason
+	dr.locker.Unlock()
+	dr.Refresh()
+}
+
+func (dr *detailRow) updateInput(input fieldglass.InputValue) {
+	dr.locker.Lock()
+	dr.name = input.Name + ":"
+	dr.typeName = input.Type.FormatName()
+	dr.defaultValue = input.DefaultValue
+	dr.locker.Unlock()
+	dr.Refresh()
+}
+
 type detailRowRenderer struct {
 	dr       *detailRow
 	nameLbl  *widget.Label
@@ -93,37 +121,35 @@ func (d *detailRowRenderer) Destroy() {
 
 func (d *detailRowRenderer) Layout(size fyne.Size) {
 	prevSize := fyne.NewSize(0, 0)
-	topLeft := fyne.NewPos(theme.Padding(), theme.Padding()+10)
+	topLeft := fyne.NewPos(theme.Padding(), theme.Padding())
 	d.nameLbl.Move(topLeft)
-	nameSize := d.nameSize()
-	typTopLeft := topLeft.Add(fyne.NewPos(nameSize.Width+14, 8))
+	nameSize := d.nameLbl.MinSize()
+	typTopLeft := topLeft.Add(fyne.NewPos(nameSize.Width+theme.Padding(), 8))
 	d.typeText.Move(typTopLeft)
 	prevSize = nameSize
 
 	if d.descriptionLbl.Visible() {
-		topLeft = topLeft.Add(fyne.NewPos(0, nameSize.Height+theme.Padding()))
-		descSize := d.descriptionSize()
+		topLeft = topLeft.Add(fyne.NewPos(0, prevSize.Height+theme.Padding()))
 		d.descriptionLbl.Move(topLeft)
-		descSize.Width = size.Width
-		d.descriptionLbl.Resize(descSize)
-		//d.descriptionLbl.Resize(fyne.NewSize(size.Width, size.Height))
-		prevSize = descSize
+		newDescSize := fyne.NewSize(size.Width-theme.Padding(), d.descriptionLbl.MinSize().Height)
+		d.descriptionLbl.Resize(newDescSize)
+		prevSize = newDescSize
 	}
 
 	if d.dr.isDeprecated {
-		topLeft = topLeft.Add(fyne.NewPos(0, prevSize.Height+15+theme.Padding()))
+		topLeft = topLeft.Add(fyne.NewPos(0, prevSize.Height+theme.Padding()))
 		d.cautionLbl.Resize(fyne.NewSize(32, 32))
 		d.cautionLbl.Move(topLeft.Add(fyne.NewPos(8, 0)))
-		deprecTopLeft := topLeft.Add(fyne.NewSize(38, 0))
+		deprecTopLeft := topLeft.Add(fyne.NewPos(38, 0))
 		d.deprecationLbl.Move(deprecTopLeft)
-		d.deprecationLbl.Resize(fyne.NewSize(size.Width-2*theme.Padding(), size.Height))
-		prevSize = d.deprecationSize()
+		d.deprecationLbl.Resize(fyne.NewSize(size.Width-theme.Padding(), d.deprecationLbl.MinSize().Height))
+		prevSize = d.deprecationLbl.MinSize()
 	}
 
-	if d.dr.defaultValue != nil {
-		topLeft = topLeft.Add(fyne.NewPos(0, prevSize.Height+15+theme.Padding()))
+	if d.defaultLbl.Visible() {
+		topLeft = topLeft.Add(fyne.NewPos(0, prevSize.Height+theme.Padding()))
 		d.defaultTitle.Move(topLeft)
-		titleSize := fyne.MeasureText(d.defaultTitle.Text, theme.TextSize(), d.defaultTitle.TextStyle)
+		titleSize := d.defaultTitle.MinSize()
 		defTopleft := topLeft.Add(fyne.NewSize(titleSize.Width+10, 0))
 		d.defaultLbl.Move(defTopleft)
 	}
@@ -131,56 +157,35 @@ func (d *detailRowRenderer) Layout(size fyne.Size) {
 
 func (d *detailRowRenderer) MinSize() fyne.Size {
 
+	maxWidth := float32(0.0)
+	runningHeight := float32(0.0)
+
 	nameSize := d.nameLbl.MinSize()
 	typeSize := d.typeText.MinSize()
+	maxWidth = theme.Padding() + nameSize.Width + theme.Padding() + typeSize.Width
+	runningHeight += nameSize.Height + (2 * theme.Padding())
 
-	descSize := d.descriptionLbl.MinSize()
-	//d.descriptionLbl.Resize(d.dr.Size())
-
-	deprecSize := d.deprecationLbl.MinSize()
-	cautionSize := d.cautionLbl.MinSize()
-	defValSize := d.defaultLbl.MinSize()
-
-	height := nameSize.Height + descSize.Height + fyne.Max(cautionSize.Height, deprecSize.Height) + defValSize.Height + 4*theme.Padding()
-	width := fyne.Max(nameSize.Width+typeSize.Width, descSize.Width) + 2*theme.Padding()
-	width = fyne.Max(width, deprecSize.Width)
-	width = fyne.Max(width, defValSize.Width)
-	return fyne.NewSize(width, height)
-}
-
-func (d *detailRowRenderer) nameSize() fyne.Size {
-	if d.dr.name == "" {
-		return fyne.MeasureText("Temp", theme.TextSize(), d.descriptionLbl.TextStyle)
+	if d.dr.description != nil {
+		descSize := d.descriptionLbl.MinSize()
+		maxWidth = fyne.Max(maxWidth, descSize.Width)
+		runningHeight += descSize.Height + (2 * theme.Padding())
 	}
-	return fyne.MeasureText(d.dr.name, theme.TextSize(), d.nameLbl.TextStyle)
-}
 
-func (d *detailRowRenderer) typeSize() fyne.Size {
-	if d.dr.typeName == "" {
-		return fyne.MeasureText("Temp", theme.TextSize(), d.descriptionLbl.TextStyle)
+	if d.dr.deprecationReason != nil {
+		deprecSize := d.deprecationLbl.MinSize()
+		cautionSize := d.cautionLbl.MinSize()
+		maxWidth = fyne.Max(maxWidth, theme.Padding()+cautionSize.Width+theme.Padding()+deprecSize.Width)
+		runningHeight += fyne.Max(deprecSize.Height, cautionSize.Height) + (2 * theme.Padding())
 	}
-	return fyne.MeasureText(d.dr.typeName, theme.TextSize(), d.typeText.TextStyle)
-}
 
-func (d *detailRowRenderer) descriptionSize() fyne.Size {
-	if d.dr.description == nil || *d.dr.description == "" {
-		return fyne.MeasureText("Temp", theme.TextSize(), d.descriptionLbl.TextStyle)
+	if d.dr.defaultValue != nil {
+		defTitleSize := d.defaultTitle.MinSize()
+		defValSize := d.defaultLbl.MinSize()
+		maxWidth = fyne.Max(maxWidth, theme.Padding()+defTitleSize.Width+theme.Padding()+defValSize.Width)
+		runningHeight += fyne.Max(defTitleSize.Height, defValSize.Height) + (2 * theme.Padding())
 	}
-	return fyne.MeasureText(*d.dr.description, theme.TextSize(), d.descriptionLbl.TextStyle)
-}
 
-func (d *detailRowRenderer) deprecationSize() fyne.Size {
-	if !d.dr.isDeprecated {
-		return fyne.MeasureText("Temp", theme.TextSize(), d.deprecationLbl.TextStyle)
-	}
-	return fyne.MeasureText(*d.dr.deprecationReason, theme.TextSize(), d.deprecationLbl.TextStyle)
-}
-
-func (d *detailRowRenderer) defaultValueSize() fyne.Size {
-	if d.dr.defaultValue == nil || *d.dr.defaultValue == "" {
-		return fyne.MeasureText("Temp", theme.TextSize(), d.defaultLbl.TextStyle)
-	}
-	return fyne.MeasureText(*d.dr.defaultValue, theme.TextSize(), d.defaultLbl.TextStyle)
+	return fyne.NewSize(maxWidth, runningHeight)
 }
 
 func (d *detailRowRenderer) Objects() []fyne.CanvasObject {
@@ -188,6 +193,7 @@ func (d *detailRowRenderer) Objects() []fyne.CanvasObject {
 }
 
 func (d *detailRowRenderer) Refresh() {
+	d.dr.locker.RLock()
 	d.nameLbl.SetText(d.dr.name)
 	d.typeText.Text = d.dr.typeName
 	d.typeText.Refresh()
@@ -200,7 +206,7 @@ func (d *detailRowRenderer) Refresh() {
 
 	if d.dr.isDeprecated {
 		d.cautionLbl.Show()
-		if d.dr.deprecationReason != nil {
+		if d.dr.deprecationReason != nil && *d.dr.deprecationReason != "" {
 			d.deprecationLbl.Show()
 			d.deprecationLbl.SetText(*d.dr.deprecationReason)
 		}
@@ -217,4 +223,5 @@ func (d *detailRowRenderer) Refresh() {
 		d.defaultTitle.Hide()
 		d.defaultLbl.Hide()
 	}
+	d.dr.locker.RUnlock()
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"gitlab.com/high-creek-software/fieldglass"
 )
@@ -23,26 +23,29 @@ type detailLayout struct {
 func newDetailLayout(title string, subTitle *string, remove func(container *fyne.Container), typeSelected func(t fieldglass.Type)) *detailLayout {
 	dl := &detailLayout{typeSelected: typeSelected}
 	dl.title = widget.NewRichTextFromMarkdown(fmt.Sprintf("# %s", title))
-	dl.closeBtn = widget.NewButtonWithIcon("Close", theme.ContentRemoveIcon(), func() { remove(dl.Container) })
+	dl.closeBtn = widget.NewButton("X", func() { remove(dl.Container) })
+	dl.closeBtn.Importance = widget.LowImportance
 	dl.segmentWrapper = container.NewMax()
 
-	titleWrapper := container.NewVBox(container.NewHBox(widget.NewLabel("            "), dl.title, widget.NewLabel("            ")))
+	titleWrapper := container.NewBorder(nil, nil, nil, dl.closeBtn, container.NewHBox(layout.NewSpacer(), widget.NewLabel("			"), dl.title, widget.NewLabel("			"), layout.NewSpacer()))
 	sub := ""
 	if subTitle != nil && *subTitle != "" {
 		sub = *subTitle
 	}
-	titleWrapper.Add(widget.NewLabel(sub))
-	titleWrapper.Add(widget.NewSeparator())
+
+	titleBorder := container.NewBorder(titleWrapper, widget.NewSeparator(), nil, nil, widget.NewLabel(sub))
 
 	child := container.NewScroll(dl.segmentWrapper)
 	child.Direction = container.ScrollVerticalOnly
-	dl.Container = container.NewPadded(container.NewBorder(titleWrapper,
-		dl.closeBtn,
+	dl.Container = container.NewPadded(container.NewBorder(titleBorder,
+		nil,
 		nil,
 		nil,
 		container.NewPadded(child),
 	),
 	)
+
+	dl.Resize(fyne.NewSize(450, dl.Container.MinSize().Height))
 
 	return dl
 }
@@ -51,7 +54,7 @@ func (dl *detailLayout) buildArgs(args []fieldglass.InputValue) *fyne.Container 
 	ia := &inputAdapter{inputs: args}
 	inputList := widget.NewList(ia.count, ia.createTemplate, ia.updateTemplate)
 	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, inputList)
-
+	ia.list = inputList
 	inputList.OnSelected = func(id widget.ListItemID) {
 		i := ia.getItem(id)
 		if i.Type.RootType() == fieldglass.TypeKindScalar {
@@ -74,6 +77,7 @@ func (dl *detailLayout) buildProperties(t *fieldglass.Type) *fyne.Container {
 		}
 		dl.typeSelected(*f.Type)
 	}
+	adapter.list = list
 
 	return propertiesBorder
 }

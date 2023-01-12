@@ -10,6 +10,7 @@ import (
 	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"github.com/high-creek-software/gqlbrowser/internal/storage"
 	"gitlab.com/high-creek-software/fieldglass"
+	"log"
 )
 
 type GQLBrowser struct {
@@ -51,6 +52,12 @@ func NewGQLBrowser() *GQLBrowser {
 	gqlb.manager = storage.NewManager(gqlb.client)
 
 	gqlb.setupBody()
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered in newGQLBrowser", r)
+		}
+	}()
 
 	return gqlb
 }

@@ -11,6 +11,7 @@ var _ adapter[fieldglass.Field] = (*fieldAdapter)(nil)
 
 type fieldAdapter struct {
 	fields []fieldglass.Field
+	list   *widget.List
 }
 
 func (n *fieldAdapter) Cursor() desktop.Cursor {
@@ -35,6 +36,9 @@ func (fa *fieldAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObjec
 	row.name = f.Name + args + ":"
 	row.typ = f.Type.FormatName()
 	row.Refresh()
+	if fa.list != nil {
+		fa.list.SetItemHeight(id, row.MinSize().Height)
+	}
 }
 
 func (fa *fieldAdapter) getItem(id widget.ListItemID) fieldglass.Field {

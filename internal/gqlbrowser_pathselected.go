@@ -36,6 +36,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 		g.queryAdapter = &fieldAdapter{fields: query.Fields}
 		list := widget.NewList(g.queryAdapter.count, g.queryAdapter.createTemplate, g.queryAdapter.updateTemplate)
 		list.OnSelected = g.querySelected
+		g.queryAdapter.list = list
 		queryTab := container.NewTabItem("Query", list)
 		g.tabs = append(g.tabs, queryTab)
 		g.typeTabs.Append(queryTab)
@@ -46,6 +47,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 		g.mutationAdapter = &fieldAdapter{fields: mutation.Fields}
 		list := widget.NewList(g.mutationAdapter.count, g.mutationAdapter.createTemplate, g.mutationAdapter.updateTemplate)
 		list.OnSelected = g.mutationSelected
+		g.mutationAdapter.list = list
 		mutationTab := container.NewTabItem("Mutation", list)
 		g.tabs = append(g.tabs, mutationTab)
 		g.typeTabs.Append(mutationTab)
