@@ -53,12 +53,6 @@ func NewGQLBrowser() *GQLBrowser {
 
 	gqlb.setupBody()
 
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered in newGQLBrowser", r)
-		}
-	}()
-
 	return gqlb
 }
 
@@ -288,6 +282,11 @@ func (g *GQLBrowser) setupClosed() {
 }
 
 func (g *GQLBrowser) Start() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered in GQLBrowser.Start", r)
+		}
+	}()
 	g.mainWindow.ShowAndRun()
 }
 
