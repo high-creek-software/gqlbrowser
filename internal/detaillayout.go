@@ -52,32 +52,28 @@ func newDetailLayout(title string, subTitle *string, remove func(container *fyne
 
 func (dl *detailLayout) buildArgs(args []fieldglass.InputValue) *fyne.Container {
 	ia := &inputAdapter{inputs: args}
-	inputList := widget.NewList(ia.count, ia.createTemplate, ia.updateTemplate)
-	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, inputList)
-	ia.list = inputList
-	inputList.OnSelected = func(id widget.ListItemID) {
+	fll := newFilterableListLayout[fieldglass.InputValue](ia, func(id widget.ListItemID) {
 		i := ia.getItem(id)
 		if i.Type.RootType() == fieldglass.TypeKindScalar {
 			return
 		}
 		dl.typeSelected(*i.Type)
-	}
+	})
+	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, fll.Container)
 
 	return inputBorder
 }
 
 func (dl *detailLayout) buildProperties(t *fieldglass.Type) *fyne.Container {
 	adapter := &fullFieldAdapter{fields: t.Fields}
-	list := widget.NewList(adapter.count, adapter.createTemplate, adapter.updateTemplate)
-	propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, list)
-	list.OnSelected = func(id widget.ListItemID) {
+	fll := newFilterableListLayout[fieldglass.Field](adapter, func(id widget.ListItemID) {
 		f := adapter.getItem(id)
 		if f.Type.RootType() == fieldglass.TypeKindScalar {
 			return
 		}
 		dl.typeSelected(*f.Type)
-	}
-	adapter.list = list
+	})
+	propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, fll.Container)
 
 	return propertiesBorder
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/widget"
 	"gitlab.com/high-creek-software/fieldglass"
 )
 
@@ -34,10 +33,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 	query, err := g.schema.GetQuery()
 	if err == nil {
 		g.queryAdapter = &fieldAdapter{fields: query.Fields}
-		list := widget.NewList(g.queryAdapter.count, g.queryAdapter.createTemplate, g.queryAdapter.updateTemplate)
-		list.OnSelected = g.querySelected
-		g.queryAdapter.list = list
-		queryTab := container.NewTabItem("Query", list)
+		queryTab := container.NewTabItem("Query", newFilterableListLayout[fieldglass.Field](g.queryAdapter, g.querySelected).Container)
 		g.tabs = append(g.tabs, queryTab)
 		g.typeTabs.Append(queryTab)
 	}
@@ -45,10 +41,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 	mutation, _ := g.schema.GetMutation()
 	if g.schema.HasMutations() {
 		g.mutationAdapter = &fieldAdapter{fields: mutation.Fields}
-		list := widget.NewList(g.mutationAdapter.count, g.mutationAdapter.createTemplate, g.mutationAdapter.updateTemplate)
-		list.OnSelected = g.mutationSelected
-		g.mutationAdapter.list = list
-		mutationTab := container.NewTabItem("Mutation", list)
+		mutationTab := container.NewTabItem("Mutation", newFilterableListLayout[fieldglass.Field](g.mutationAdapter, g.mutationSelected).Container)
 		g.tabs = append(g.tabs, mutationTab)
 		g.typeTabs.Append(mutationTab)
 	}
@@ -83,37 +76,27 @@ func (g *GQLBrowser) pathSelected(path string) {
 	}
 
 	if g.tAdapter.count() > 0 {
-		list := widget.NewList(g.tAdapter.count, g.tAdapter.createTemplate, g.tAdapter.updateTemplate)
-		list.OnSelected = g.typeSelected
-		tTab := container.NewTabItem("Types", list)
+		tTab := container.NewTabItem("Types", newFilterableListLayout[fieldglass.Type](g.tAdapter, g.typeSelected).Container)
 		g.tabs = append(g.tabs, tTab)
 		g.typeTabs.Append(tTab)
 	}
 	if g.interfacesAdapter.count() > 0 {
-		list := widget.NewList(g.interfacesAdapter.count, g.interfacesAdapter.createTemplate, g.interfacesAdapter.updateTemplate)
-		list.OnSelected = g.interfaceSelected
-		iTab := container.NewTabItem("Interfaces", list)
+		iTab := container.NewTabItem("Interfaces", newFilterableListLayout[fieldglass.Type](g.interfacesAdapter, g.interfaceSelected).Container)
 		g.tabs = append(g.tabs, iTab)
 		g.typeTabs.Append(iTab)
 	}
 	if g.uAdapter.count() > 0 {
-		list := widget.NewList(g.uAdapter.count, g.uAdapter.createTemplate, g.uAdapter.updateTemplate)
-		list.OnSelected = g.unionSelected
-		uTab := container.NewTabItem("Unions", list)
+		uTab := container.NewTabItem("Unions", newFilterableListLayout[fieldglass.Type](g.uAdapter, g.unionSelected).Container)
 		g.tabs = append(g.tabs, uTab)
 		g.typeTabs.Append(uTab)
 	}
 	if g.eAdapter.count() > 0 {
-		list := widget.NewList(g.eAdapter.count, g.eAdapter.createTemplate, g.eAdapter.updateTemplate)
-		list.OnSelected = g.enumSelected
-		eTab := container.NewTabItem("Enums", list)
+		eTab := container.NewTabItem("Enums", newFilterableListLayout[fieldglass.Type](g.eAdapter, g.enumSelected))
 		g.tabs = append(g.tabs, eTab)
 		g.typeTabs.Append(eTab)
 	}
 	if g.inputAdapter.count() > 0 {
-		list := widget.NewList(g.inputAdapter.count, g.inputAdapter.createTemplate, g.inputAdapter.updateTemplate)
-		list.OnSelected = g.inputSelected
-		iTab := container.NewTabItem("Inputs", list)
+		iTab := container.NewTabItem("Inputs", newFilterableListLayout[fieldglass.Type](g.inputAdapter, g.inputSelected).Container)
 		g.tabs = append(g.tabs, iTab)
 		g.typeTabs.Append(iTab)
 	}
