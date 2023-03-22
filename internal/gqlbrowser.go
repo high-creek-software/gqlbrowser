@@ -122,37 +122,37 @@ func (g *GQLBrowser) showQueryMut(f fieldglass.Field) {
 
 func (g *GQLBrowser) typeSelected(id widget.ListItemID) {
 	t := g.tAdapter.getItem(id)
-	g.showType(t)
+	g.showType(t, nil)
 }
 
 func (g *GQLBrowser) interfaceSelected(id widget.ListItemID) {
 	t := g.interfacesAdapter.getItem(id)
-	g.showType(t)
+	g.showType(t, nil)
 }
 
 func (g *GQLBrowser) unionSelected(id widget.ListItemID) {
 	t := g.uAdapter.getItem(id)
-	g.showType(t)
+	g.showType(t, nil)
 }
 
 func (g *GQLBrowser) enumSelected(id widget.ListItemID) {
 	t := g.eAdapter.getItem(id)
-	g.showType(t)
+	g.showType(t, nil)
 }
 
 func (g *GQLBrowser) inputSelected(id widget.ListItemID) {
 	t := g.inputAdapter.getItem(id)
-	g.showType(t)
+	g.showType(t, nil)
 }
 
 func (g *GQLBrowser) remove(cont *fyne.Container) {
 	g.displayContainer.Remove(cont)
 }
 
-func (g *GQLBrowser) showType(t fieldglass.Type) {
+func (g *GQLBrowser) showType(t fieldglass.Type, f *fieldglass.Field) {
 
 	rootType, _ := g.schema.FindType(t.RootName())
-	detail := newDetailLayout(t.RootName(), nil, g.remove, g.showType)
+	detail := newDetailLayout(t.RootName(), rootType.Description, g.remove, g.showType)
 	if len(rootType.Interfaces) > 0 {
 		wrap := detail.buildTypes("Implements", rootType.Interfaces)
 		detail.segmentWrapper.Add(wrap)
@@ -165,12 +165,16 @@ func (g *GQLBrowser) showType(t fieldglass.Type) {
 	if len(rootType.InputFields) > 0 {
 		argWrap = detail.buildArgs(rootType.InputFields)
 	}
+	if f != nil && len(f.Args) > 0 && argWrap == nil {
+		argWrap = detail.buildArgs(f.Args)
+	}
 	var propWrap *fyne.Container
 	if len(rootType.Fields) > 0 {
 		propWrap = detail.buildProperties(rootType)
 	}
 	if argWrap != nil && propWrap != nil {
 		split := container.NewVSplit(argWrap, propWrap)
+		split.SetOffset(0.33)
 		detail.segmentWrapper.Add(split)
 	} else if propWrap != nil {
 		detail.segmentWrapper.Add(propWrap)

@@ -17,10 +17,10 @@ type detailLayout struct {
 	segmentWrapper *fyne.Container
 
 	remove       func(container *fyne.Container)
-	typeSelected func(t fieldglass.Type)
+	typeSelected func(t fieldglass.Type, f *fieldglass.Field)
 }
 
-func newDetailLayout(title string, subTitle *string, remove func(container *fyne.Container), typeSelected func(t fieldglass.Type)) *detailLayout {
+func newDetailLayout(title string, subTitle *string, remove func(container *fyne.Container), typeSelected func(t fieldglass.Type, f *fieldglass.Field)) *detailLayout {
 	dl := &detailLayout{typeSelected: typeSelected}
 	dl.title = widget.NewRichTextFromMarkdown(fmt.Sprintf("# %s", title))
 	dl.closeBtn = widget.NewButton("X", func() { remove(dl.Container) })
@@ -57,7 +57,7 @@ func (dl *detailLayout) buildArgs(args []fieldglass.InputValue) *fyne.Container 
 		if i.Type.RootType() == fieldglass.TypeKindScalar {
 			return
 		}
-		dl.typeSelected(*i.Type)
+		dl.typeSelected(*i.Type, nil)
 	})
 	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, fll.Container)
 
@@ -71,7 +71,7 @@ func (dl *detailLayout) buildProperties(t *fieldglass.Type) *fyne.Container {
 		if f.Type.RootType() == fieldglass.TypeKindScalar {
 			return
 		}
-		dl.typeSelected(*f.Type)
+		dl.typeSelected(*f.Type, &f)
 	})
 	propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, fll.Container)
 
@@ -84,7 +84,7 @@ func (dl *detailLayout) buildTypes(name string, ts []fieldglass.Type) *fyne.Cont
 		func(t fieldglass.Type) {
 			name := widget.NewHyperlink(*t.Name+":"+t.FormatName(), nil)
 			name.OnTapped = func() {
-				dl.typeSelected(t)
+				dl.typeSelected(t, nil)
 			}
 			if t.Description != nil && *t.Description != "" {
 				desc := widget.NewLabel(*t.Description)
