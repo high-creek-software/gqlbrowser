@@ -46,10 +46,18 @@ func (n nameTypeRowRenderer) Destroy() {
 
 func (n nameTypeRowRenderer) Layout(size fyne.Size) {
 	nameSize := fyne.MeasureText(n.nameLbl.Text, theme.TextSize(), n.nameLbl.TextStyle)
+	typeSize := fyne.MeasureText(n.typLbl.Text, theme.TextSize(), n.typLbl.TextStyle)
+
+	useTwoLines := nameSize.Width+typeSize.Width+3*theme.Padding() > size.Width
 
 	topLeft := fyne.NewPos(theme.Padding(), theme.Padding())
 	n.nameLbl.Move(topLeft)
-	topLeft = topLeft.Add(fyne.NewPos(nameSize.Width+theme.Padding()+12, 8))
+	if useTwoLines {
+		topLeft = fyne.NewPos(2*theme.Padding(), nameSize.Height+2*theme.Padding()+10)
+	} else {
+		topLeft = topLeft.Add(fyne.NewPos(nameSize.Width+theme.Padding()+12, 8))
+	}
+
 	n.typLbl.Move(topLeft)
 }
 
@@ -57,7 +65,14 @@ func (n nameTypeRowRenderer) MinSize() fyne.Size {
 	nameSize := fyne.MeasureText(n.nameLbl.Text, theme.TextSize(), n.nameLbl.TextStyle)
 	typSize := fyne.MeasureText(n.typLbl.Text, theme.TextSize(), n.typLbl.TextStyle)
 
-	return fyne.NewSize(nameSize.Width+typSize.Width+3*theme.Padding()+30, fyne.Max(nameSize.Height, typSize.Height)+4*theme.Padding())
+	width := fyne.Max(nameSize.Width, typSize.Width)
+	height := fyne.Max(nameSize.Height, typSize.Height)
+
+	if n.typLbl.Position().Y > n.nameLbl.Position().Y+8 {
+		height = nameSize.Height + typSize.Height
+	}
+
+	return fyne.NewSize(width+2*theme.Padding(), height+4*theme.Padding())
 }
 
 func (n nameTypeRowRenderer) Objects() []fyne.CanvasObject {

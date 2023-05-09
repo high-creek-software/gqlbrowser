@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"log"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -10,7 +12,6 @@ import (
 	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"github.com/high-creek-software/gqlbrowser/internal/storage"
 	"gitlab.com/high-creek-software/fieldglass"
-	"log"
 )
 
 type GQLBrowser struct {
@@ -43,6 +44,7 @@ type GQLBrowser struct {
 }
 
 func NewGQLBrowser() *GQLBrowser {
+	//	os.Setenv("FYNE_THEME", "light")
 	gqlb := &GQLBrowser{app: app.NewWithID("github.com/high-creek-software/gqlbrowser")}
 	gqlb.app.SetIcon(resources.IconResource)
 	gqlb.mainWindow = gqlb.app.NewWindow("GQL Browser")
