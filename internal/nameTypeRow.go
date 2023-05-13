@@ -48,7 +48,7 @@ func (n nameTypeRowRenderer) Layout(size fyne.Size) {
 	nameSize := fyne.MeasureText(n.nameLbl.Text, theme.TextSize(), n.nameLbl.TextStyle)
 	typeSize := fyne.MeasureText(n.typLbl.Text, theme.TextSize(), n.typLbl.TextStyle)
 
-	useTwoLines := nameSize.Width+typeSize.Width+3*theme.Padding() > size.Width
+	useTwoLines := nameSize.Width+typeSize.Width+5*theme.Padding() > size.Width
 
 	topLeft := fyne.NewPos(theme.Padding(), theme.Padding())
 	n.nameLbl.Move(topLeft)
@@ -69,7 +69,7 @@ func (n nameTypeRowRenderer) MinSize() fyne.Size {
 	height := fyne.Max(nameSize.Height, typSize.Height)
 
 	if n.typLbl.Position().Y > n.nameLbl.Position().Y+8 {
-		height = nameSize.Height + typSize.Height
+		height = nameSize.Height + typSize.Height + theme.Padding()
 	}
 
 	return fyne.NewSize(width+2*theme.Padding(), height+4*theme.Padding())
