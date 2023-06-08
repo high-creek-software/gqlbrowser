@@ -2,12 +2,10 @@ package storage
 
 import (
 	"encoding/json"
-	"errors"
 	"gitlab.com/high-creek-software/fieldglass"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
-	"os"
 	"path/filepath"
 )
 
@@ -34,14 +32,15 @@ type ManagerImpl struct {
 	*endpointRepo
 }
 
-func NewManager(client fieldglass.FieldGlass) Manager {
-	m := &ManagerImpl{applicationDirectory: getApplicationDirectory(), client: client}
+func NewManager(appDirectory string, client fieldglass.FieldGlass) Manager {
+	m := &ManagerImpl{applicationDirectory: appDirectory, client: client}
 
-	err := os.Mkdir(m.applicationDirectory, os.ModePerm)
-	if err != nil && !errors.Is(err, os.ErrExist) {
-		log.Fatal("error creating app directory", err)
-	}
+	//err := os.Mkdir(m.applicationDirectory, os.ModePerm)
+	//if err != nil && !errors.Is(err, os.ErrExist) {
+	//	log.Fatal("error creating app directory", err)
+	//}
 
+	var err error
 	m.dbPath = filepath.Join(m.applicationDirectory, dbName)
 	m.db, err = gorm.Open(sqlite.Open(m.dbPath), &gorm.Config{})
 	if err != nil {

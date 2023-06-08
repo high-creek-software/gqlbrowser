@@ -43,6 +43,8 @@ func (fa *fieldAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObjec
 	row := co.(*nameTypeRow)
 	row.name = f.Name + args + ":"
 	row.typ = f.Type.FormatName()
+	row.isDeprecated = f.IsDeprecated
+	row.deprecationReason = f.DeprecationReason
 	row.Refresh()
 	if fa.list != nil {
 		fa.list.SetItemHeight(id, row.MinSize().Height)

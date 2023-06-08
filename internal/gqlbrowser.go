@@ -51,7 +51,7 @@ func NewGQLBrowser() *GQLBrowser {
 	gqlb.mainWindow.Resize(fyne.NewSize(1500, 800))
 	gqlb.app.Lifecycle().SetOnStarted(gqlb.appStarted)
 	gqlb.client = fieldglass.NewFieldGlass()
-	gqlb.manager = storage.NewManager(gqlb.client)
+	gqlb.manager = storage.NewManager(gqlb.app.Storage().RootURI().Path(), gqlb.client)
 
 	gqlb.setupBody()
 

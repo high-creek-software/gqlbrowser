@@ -3,7 +3,7 @@ module github.com/high-creek-software/gqlbrowser
 go 1.19
 
 require (
-	fyne.io/fyne/v2 v2.3.4
+	fyne.io/fyne/v2 v2.3.5
 	github.com/lithammer/fuzzysearch v1.1.5
 	github.com/rs/xid v1.4.0
 	gitlab.com/high-creek-software/fieldglass v0.0.0-20221207134814-0f58d0c0e130
@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	fyne.io/systray v1.10.1-0.20230403195833-7dc3c09283d6 // indirect
+	fyne.io/systray v1.10.1-0.20230602210930-b6a2d6ca2a7b // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v0.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
