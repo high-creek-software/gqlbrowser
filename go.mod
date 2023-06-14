@@ -1,6 +1,6 @@
 module github.com/high-creek-software/gqlbrowser
 
-go 1.19
+go 1.20
 
 require (
 	fyne.io/fyne/v2 v2.3.5
@@ -43,3 +43,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/js/dom v0.0.0-20210725211120-f030747120f2 // indirect
 )
+
+replace gitlab.com/high-creek-software/fieldglass => ../fieldglass

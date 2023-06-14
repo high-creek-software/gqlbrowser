@@ -1,8 +1,7 @@
 package internal
 
 import (
-	"log"
-
+	"encoding/json"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -12,6 +11,7 @@ import (
 	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"github.com/high-creek-software/gqlbrowser/internal/storage"
 	"gitlab.com/high-creek-software/fieldglass"
+	"log"
 )
 
 type GQLBrowser struct {
@@ -44,13 +44,13 @@ type GQLBrowser struct {
 }
 
 func NewGQLBrowser() *GQLBrowser {
-	//	os.Setenv("FYNE_THEME", "light")
+	//os.Setenv("FYNE_THEME", "light")
 	gqlb := &GQLBrowser{app: app.NewWithID("github.com/high-creek-software/gqlbrowser")}
 	gqlb.app.SetIcon(resources.IconResource)
 	gqlb.mainWindow = gqlb.app.NewWindow("GQL Browser")
 	gqlb.mainWindow.Resize(fyne.NewSize(1500, 800))
 	gqlb.app.Lifecycle().SetOnStarted(gqlb.appStarted)
-	gqlb.client = fieldglass.NewFieldGlass()
+	gqlb.client = fieldglass.NewFieldGlass(true)
 	gqlb.manager = storage.NewManager(gqlb.app.Storage().RootURI().Path(), gqlb.client)
 
 	gqlb.setupBody()
@@ -73,11 +73,38 @@ func (g *GQLBrowser) setupBody() {
 	displayScroll := container.NewScroll(g.displayContainer)
 	displayScroll.Direction = container.ScrollHorizontalOnly
 
+	// showButton := widget.NewButtonWithIcon("Show Raw Schema", theme.MenuExpandIcon(), g.showRawSchema)
+
+	// container.NewBorder(nil, showButton, nil, nil, g.typeTabs)
 	split := container.NewHSplit(g.typeTabs, displayScroll)
 	split.SetOffset(0.24)
 
 	border := container.NewBorder(container.NewPadded(form), nil, nil, nil, container.NewPadded(split))
 	g.mainWindow.SetContent(border)
+}
+
+func (g *GQLBrowser) showRawSchema() {
+
+	schemaWindow := g.app.NewWindow("Schema")
+	schemaWindow.Resize(fyne.NewSize(800, 450))
+
+	entry := widget.NewEntry()
+
+	schemaWindow.SetContent(entry)
+
+	schemaWindow.Show()
+
+	go func() {
+		data, err := json.MarshalIndent(g.schema, "", "  ")
+
+		if err != nil {
+			log.Println("error generating json schema", err)
+			entry.Text = "Error generating json schema: " + err.Error()
+			return
+		}
+
+		entry.Text = string(data)
+	}()
 }
 
 func (g *GQLBrowser) appStarted() {
@@ -101,7 +128,7 @@ func (g *GQLBrowser) mutationSelected(id widget.ListItemID) {
 }
 
 func (g *GQLBrowser) showQueryMut(f fieldglass.Field) {
-	detail := newDetailLayout(f.Name, f.Description, g.remove, g.showType)
+	detail := newDetailLayout(f.Name, f.Description, f.IsDeprecated, f.DeprecationReason, g.remove, g.showType)
 	var argContainer *fyne.Container
 	if len(f.Args) > 0 {
 		argContainer = detail.buildArgs(f.Args)
@@ -119,7 +146,7 @@ func (g *GQLBrowser) showQueryMut(f fieldglass.Field) {
 	} else if propContainer != nil {
 		detail.segmentWrapper.Add(propContainer)
 	}
-	g.displayContainer.Add(detail.Container)
+	g.displayContainer.Add(detail)
 }
 
 func (g *GQLBrowser) typeSelected(id widget.ListItemID) {
@@ -147,14 +174,14 @@ func (g *GQLBrowser) inputSelected(id widget.ListItemID) {
 	g.showType(t, nil)
 }
 
-func (g *GQLBrowser) remove(cont *fyne.Container) {
+func (g *GQLBrowser) remove(cont fyne.CanvasObject) {
 	g.displayContainer.Remove(cont)
 }
 
 func (g *GQLBrowser) showType(t fieldglass.Type, f *fieldglass.Field) {
 
 	rootType, _ := g.schema.FindType(t.RootName())
-	detail := newDetailLayout(t.RootName(), rootType.Description, g.remove, g.showType)
+	detail := newDetailLayout(t.RootName(), rootType.Description, false, nil, g.remove, g.showType)
 	if len(rootType.Interfaces) > 0 {
 		wrap := detail.buildTypes("Implements", rootType.Interfaces)
 		detail.segmentWrapper.Add(wrap)
@@ -187,7 +214,7 @@ func (g *GQLBrowser) showType(t fieldglass.Type, f *fieldglass.Field) {
 		wrap := detail.buildTypes("Union", rootType.PossibleTypes)
 		detail.segmentWrapper.Add(wrap)
 	}
-	g.displayContainer.Add(detail.Container)
+	g.displayContainer.Add(detail)
 }
 
 func (g *GQLBrowser) settingsTouched() {

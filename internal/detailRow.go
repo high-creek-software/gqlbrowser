@@ -97,6 +97,7 @@ func (dr *detailRow) updateInput(input fieldglass.InputValue) {
 	dr.locker.Lock()
 	dr.name = input.Name + ":"
 	dr.typeName = input.Type.FormatName()
+	dr.description = input.Description
 	dr.defaultValue = input.DefaultValue
 	dr.locker.Unlock()
 	dr.Refresh()

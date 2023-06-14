@@ -6,46 +6,71 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"gitlab.com/high-creek-software/fieldglass"
 )
 
 type detailLayout struct {
-	*fyne.Container
+	widget.BaseWidget
 
-	title          *widget.RichText
+	titleRT        *widget.RichText
+	subTitle       *string
+	subTitleRT     *widget.RichText
 	closeBtn       *widget.Button
 	segmentWrapper *fyne.Container
+
+	isDeprecated      bool
+	cautionIcon       *widget.Icon
+	deprecationReason *widget.Label
 
 	remove       func(container *fyne.Container)
 	typeSelected func(t fieldglass.Type, f *fieldglass.Field)
 }
 
-func newDetailLayout(title string, subTitle *string, remove func(container *fyne.Container), typeSelected func(t fieldglass.Type, f *fieldglass.Field)) *detailLayout {
-	dl := &detailLayout{typeSelected: typeSelected}
-	dl.title = widget.NewRichTextFromMarkdown(fmt.Sprintf("# %s", title))
-	dl.closeBtn = widget.NewButton("X", func() { remove(dl.Container) })
-	dl.closeBtn.Importance = widget.LowImportance
-	dl.segmentWrapper = container.NewMax()
+func (dl *detailLayout) CreateRenderer() fyne.WidgetRenderer {
+	titleWrapper := container.NewBorder(nil, nil, nil, dl.closeBtn, container.NewHBox(layout.NewSpacer(), widget.NewLabel("			"), dl.titleRT, widget.NewLabel("			"), layout.NewSpacer()))
 
-	titleWrapper := container.NewBorder(nil, nil, nil, dl.closeBtn, container.NewHBox(layout.NewSpacer(), widget.NewLabel("			"), dl.title, widget.NewLabel("			"), layout.NewSpacer()))
+	vBox := container.NewVBox()
+	if dl.subTitle != nil {
+		vBox.Add(dl.subTitleRT)
+	}
+	if dl.isDeprecated {
+		vBox.Add(container.NewBorder(nil, nil, dl.cautionIcon, nil, dl.deprecationReason))
+	}
+
+	titleBorder := container.NewBorder(titleWrapper, widget.NewSeparator(), nil, nil, vBox)
+
+	//if dl.isDeprecated {
+	//	titleBorder = container.NewBorder(titleBorder, container.NewBorder(nil, nil, dl.cautionIcon, nil, dl.deprecationReason), nil, nil)
+	//}
+
+	child := container.NewScroll(dl.segmentWrapper)
+	child.Direction = container.ScrollVerticalOnly
+
+	// dl.Resize(fyne.NewSize(450, dl.Container.MinSize().Height))
+	return widget.NewSimpleRenderer(container.NewPadded(container.NewBorder(titleBorder, nil, nil, nil, container.NewPadded(child))))
+}
+
+func newDetailLayout(title string, subTitle *string, isDeprecated bool, deprecationReason *string, remove func(container fyne.CanvasObject), typeSelected func(t fieldglass.Type, f *fieldglass.Field)) *detailLayout {
+	dl := &detailLayout{typeSelected: typeSelected, isDeprecated: isDeprecated, subTitle: subTitle}
+	dl.ExtendBaseWidget(dl)
+
+	dl.titleRT = widget.NewRichTextFromMarkdown(fmt.Sprintf("# %s", title))
 	sub := ""
 	if subTitle != nil && *subTitle != "" {
 		sub = *subTitle
 	}
+	dl.subTitleRT = widget.NewRichTextFromMarkdown(fmt.Sprintf("### %s", sub))
+	dl.closeBtn = widget.NewButton("X", func() { remove(dl) })
+	dl.closeBtn.Importance = widget.LowImportance
+	dl.segmentWrapper = container.NewMax()
 
-	titleBorder := container.NewBorder(titleWrapper, widget.NewSeparator(), nil, nil, widget.NewLabel(sub))
-
-	child := container.NewScroll(dl.segmentWrapper)
-	child.Direction = container.ScrollVerticalOnly
-	dl.Container = container.NewPadded(container.NewBorder(titleBorder,
-		nil,
-		nil,
-		nil,
-		container.NewPadded(child),
-	),
-	)
-
-	dl.Resize(fyne.NewSize(450, dl.Container.MinSize().Height))
+	dl.cautionIcon = widget.NewIcon(resources.CautionResource)
+	dep := ""
+	if deprecationReason != nil {
+		dep = *deprecationReason
+	}
+	dl.deprecationReason = widget.NewLabel(dep)
 
 	return dl
 }
