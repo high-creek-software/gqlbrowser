@@ -9,7 +9,7 @@ import (
 )
 
 type filterableListLayout[T any] struct {
-	*fyne.Container
+	widget.BaseWidget
 
 	adapter     filterableAdapter[T]
 	filterEntry *widget.Entry
@@ -19,8 +19,24 @@ type filterableListLayout[T any] struct {
 	filterTimer *time.Timer
 }
 
+func (f *filterableListLayout[T]) CreateRenderer() fyne.WidgetRenderer {
+
+	filterBorder := container.NewBorder(nil, nil, nil, container.NewPadded(f.clearBtn), container.NewPadded(f.filterEntry))
+
+	cont := container.NewBorder(container.NewPadded(filterBorder),
+		nil,
+		nil,
+		nil,
+		container.NewPadded(f.list),
+	)
+
+	return widget.NewSimpleRenderer(cont)
+}
+
 func newFilterableListLayout[T any](adapter filterableAdapter[T], onSelected func(id widget.ListItemID)) *filterableListLayout[T] {
 	f := &filterableListLayout[T]{adapter: adapter}
+	f.ExtendBaseWidget(f)
+
 	f.filterEntry = widget.NewEntry()
 	f.filterEntry.SetPlaceHolder("Filter...")
 	f.filterEntry.OnChanged = func(change string) {
@@ -42,13 +58,6 @@ func newFilterableListLayout[T any](adapter filterableAdapter[T], onSelected fun
 	f.list = widget.NewList(f.adapter.count, f.adapter.createTemplate, f.adapter.updateTemplate)
 	f.list.OnSelected = onSelected
 	f.adapter.setList(f.list)
-
-	f.Container = container.NewBorder(container.NewPadded(container.NewBorder(nil, nil, nil, container.NewPadded(f.clearBtn), container.NewPadded(f.filterEntry))),
-		nil,
-		nil,
-		nil,
-		container.NewPadded(f.list),
-	)
 
 	return f
 }

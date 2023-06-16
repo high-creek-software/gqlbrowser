@@ -84,7 +84,7 @@ func (dl *detailLayout) buildArgs(args []fieldglass.InputValue) *fyne.Container 
 		}
 		dl.typeSelected(*i.Type, nil)
 	})
-	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, fll.Container)
+	inputBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Arguments"), nil, nil, nil, fll)
 
 	return inputBorder
 }
@@ -98,7 +98,7 @@ func (dl *detailLayout) buildProperties(t *fieldglass.Type) *fyne.Container {
 		}
 		dl.typeSelected(*f.Type, &f)
 	})
-	propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, fll.Container)
+	propertiesBorder := container.NewBorder(widget.NewRichTextFromMarkdown("## Properties"), nil, nil, nil, fll)
 
 	return propertiesBorder
 }

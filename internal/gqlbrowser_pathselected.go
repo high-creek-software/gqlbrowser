@@ -33,7 +33,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 	query, err := g.schema.GetQuery()
 	if err == nil {
 		g.queryAdapter = &fieldAdapter{fields: query.Fields}
-		queryTab := container.NewTabItem("Query", newFilterableListLayout[fieldglass.Field](g.queryAdapter, g.querySelected).Container)
+		queryTab := container.NewTabItem("Query", newFilterableListLayout[fieldglass.Field](g.queryAdapter, g.querySelected))
 		g.tabs = append(g.tabs, queryTab)
 		g.typeTabs.Append(queryTab)
 	}
@@ -41,7 +41,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 	mutation, _ := g.schema.GetMutation()
 	if g.schema.HasMutations() {
 		g.mutationAdapter = &fieldAdapter{fields: mutation.Fields}
-		mutationTab := container.NewTabItem("Mutation", newFilterableListLayout[fieldglass.Field](g.mutationAdapter, g.mutationSelected).Container)
+		mutationTab := container.NewTabItem("Mutation", newFilterableListLayout[fieldglass.Field](g.mutationAdapter, g.mutationSelected))
 		g.tabs = append(g.tabs, mutationTab)
 		g.typeTabs.Append(mutationTab)
 	}
@@ -76,17 +76,17 @@ func (g *GQLBrowser) pathSelected(path string) {
 	}
 
 	if g.tAdapter.count() > 0 {
-		tTab := container.NewTabItem("Types", newFilterableListLayout[fieldglass.Type](g.tAdapter, g.typeSelected).Container)
+		tTab := container.NewTabItem("Types", newFilterableListLayout[fieldglass.Type](g.tAdapter, g.typeSelected))
 		g.tabs = append(g.tabs, tTab)
 		g.typeTabs.Append(tTab)
 	}
 	if g.interfacesAdapter.count() > 0 {
-		iTab := container.NewTabItem("Interfaces", newFilterableListLayout[fieldglass.Type](g.interfacesAdapter, g.interfaceSelected).Container)
+		iTab := container.NewTabItem("Interfaces", newFilterableListLayout[fieldglass.Type](g.interfacesAdapter, g.interfaceSelected))
 		g.tabs = append(g.tabs, iTab)
 		g.typeTabs.Append(iTab)
 	}
 	if g.uAdapter.count() > 0 {
-		uTab := container.NewTabItem("Unions", newFilterableListLayout[fieldglass.Type](g.uAdapter, g.unionSelected).Container)
+		uTab := container.NewTabItem("Unions", newFilterableListLayout[fieldglass.Type](g.uAdapter, g.unionSelected))
 		g.tabs = append(g.tabs, uTab)
 		g.typeTabs.Append(uTab)
 	}
@@ -96,7 +96,7 @@ func (g *GQLBrowser) pathSelected(path string) {
 		g.typeTabs.Append(eTab)
 	}
 	if g.inputAdapter.count() > 0 {
-		iTab := container.NewTabItem("Inputs", newFilterableListLayout[fieldglass.Type](g.inputAdapter, g.inputSelected).Container)
+		iTab := container.NewTabItem("Inputs", newFilterableListLayout[fieldglass.Type](g.inputAdapter, g.inputSelected))
 		g.tabs = append(g.tabs, iTab)
 		g.typeTabs.Append(iTab)
 	}

@@ -2,16 +2,19 @@ package internal
 
 import (
 	"encoding/json"
+	"log"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/high-creek-software/bento"
 	"github.com/high-creek-software/gqlbrowser/internal/resources"
 	"github.com/high-creek-software/gqlbrowser/internal/storage"
 	"gitlab.com/high-creek-software/fieldglass"
-	"log"
+	"golang.org/x/image/colornames"
 )
 
 type GQLBrowser struct {
@@ -40,11 +43,13 @@ type GQLBrowser struct {
 	endpointAdapter *endpointAdapter
 	endpointTable   *widget.Table
 
+	setupBento *bento.Box
+
 	schema fieldglass.Schema
 }
 
 func NewGQLBrowser() *GQLBrowser {
-	//os.Setenv("FYNE_THEME", "light")
+	// os.Setenv("FYNE_THEME", "light")
 	gqlb := &GQLBrowser{app: app.NewWithID("github.com/high-creek-software/gqlbrowser")}
 	gqlb.app.SetIcon(resources.IconResource)
 	gqlb.mainWindow = gqlb.app.NewWindow("GQL Browser")
@@ -221,19 +226,24 @@ func (g *GQLBrowser) settingsTouched() {
 	if g.setupWindow != nil {
 		return
 	}
+	g.setupBento = bento.NewBox()
+
 	g.setupWindow = g.app.NewWindow("Setup")
 	g.setupWindow.SetOnClosed(g.setupClosed)
-	g.setupWindow.Resize(fyne.NewSize(950, 600))
+	g.setupWindow.Resize(fyne.NewSize(1200, 750))
 
+	pathLbl := widget.NewLabel("URL:")
 	pathEntry := widget.NewEntry()
 
-	pathItem := widget.NewFormItem("Path:", pathEntry)
-	inputForm := widget.NewForm(pathItem)
+	// pathItem := widget.NewFormItem("URL:", pathEntry)
+	// inputForm := widget.NewForm(pathItem)
 
 	g.endpointAdapter = newEndpointAdapter(g.refreshEndpoint, g.deleteEndpoint)
 	g.endpointAdapter.resetAll(g.endpoints)
-	g.endpointTable = widget.NewTable(g.endpointAdapter.count, g.endpointAdapter.createTemplate, g.endpointAdapter.updateTemplate)
-	g.endpointTable.SetColumnWidth(0, 350)
+	g.endpointTable = widget.NewTableWithHeaders(g.endpointAdapter.count, g.endpointAdapter.createTemplate, g.endpointAdapter.updateTemplate)
+	g.endpointTable.CreateHeader = g.endpointAdapter.createHeader
+	g.endpointTable.UpdateHeader = g.endpointAdapter.updateHeader
+	g.endpointTable.SetColumnWidth(0, 450)
 	g.endpointTable.SetColumnWidth(1, 200)
 	g.endpointTable.SetColumnWidth(2, 200)
 
@@ -246,13 +256,14 @@ func (g *GQLBrowser) settingsTouched() {
 		g.addEndpoint(path)
 	})
 
-	g.setupWindow.SetContent(container.NewBorder(
-		container.NewVBox(inputForm, saveBtn),
+	mainContent := container.NewBorder(
+		container.NewBorder(nil, nil, pathLbl, saveBtn, pathEntry),
 		nil,
 		nil,
 		nil,
 		container.NewPadded(g.endpointTable),
-	))
+	)
+	g.setupWindow.SetContent(container.NewMax(mainContent, g.setupBento))
 
 	g.setupWindow.Show()
 }
@@ -260,7 +271,13 @@ func (g *GQLBrowser) settingsTouched() {
 func (g *GQLBrowser) refreshEndpoint(e storage.Endpoint) {
 	err := g.manager.Update(e)
 	if err != nil {
-		dialog.ShowError(err, g.mainWindow)
+		if g.setupBento != nil {
+			itm := bento.NewItemWithMessage(err.Error(), bento.LengthLong)
+			itm.SetBackgroundColor(colornames.Red)
+			g.setupBento.AddItem(itm)
+		} else {
+			dialog.ShowError(err, g.mainWindow)
+		}
 		return
 	}
 	g.loadEndpoints()
@@ -269,7 +286,13 @@ func (g *GQLBrowser) refreshEndpoint(e storage.Endpoint) {
 func (g *GQLBrowser) deleteEndpoint(e storage.Endpoint) {
 	err := g.manager.Delete(e)
 	if err != nil {
-		dialog.ShowError(err, g.mainWindow)
+		if g.setupBento != nil {
+			itm := bento.NewItemWithMessage(err.Error(), bento.LengthLong)
+			itm.SetBackgroundColor(colornames.Red)
+			g.setupBento.AddItem(itm)
+		} else {
+			dialog.ShowError(err, g.mainWindow)
+		}
 		return
 	}
 	g.loadEndpoints()
@@ -278,7 +301,13 @@ func (g *GQLBrowser) deleteEndpoint(e storage.Endpoint) {
 func (g *GQLBrowser) addEndpoint(path string) {
 	endpoint, err := g.manager.Create(path)
 	if err != nil {
-		dialog.ShowError(err, g.mainWindow)
+		if g.setupBento != nil {
+			itm := bento.NewItemWithMessage(err.Error(), bento.LengthLong)
+			itm.SetBackgroundColor(colornames.Red)
+			g.setupBento.AddItem(itm)
+		} else {
+			dialog.ShowError(err, g.mainWindow)
+		}
 		return
 	}
 	g.endpointAdapter.addEndpoint(endpoint)
@@ -295,6 +324,9 @@ func (g *GQLBrowser) loadEndpoints() {
 	g.endpoints = endpoints
 	if g.endpointAdapter != nil {
 		g.endpointAdapter.resetAll(g.endpoints)
+	}
+	if g.endpointTable != nil {
+		g.endpointTable.Refresh()
 	}
 }
 
