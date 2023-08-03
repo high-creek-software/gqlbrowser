@@ -79,8 +79,10 @@ func (n nameTypeRowRenderer) Layout(size fyne.Size) {
 }
 
 func (n nameTypeRowRenderer) MinSize() fyne.Size {
-	nameSize := fyne.MeasureText(n.nameLbl.Text, theme.TextSize(), n.nameLbl.TextStyle)
-	typSize := fyne.MeasureText(n.typLbl.Text, theme.TextSize(), n.typLbl.TextStyle)
+	// nameSize := fyne.MeasureText(n.nameLbl.Text, theme.TextSize(), n.nameLbl.TextStyle)
+	// typSize := fyne.MeasureText(n.typLbl.Text, theme.TextSize(), n.typLbl.TextStyle)
+	nameSize := n.nameLbl.MinSize()
+	typSize := n.typLbl.MinSize()
 	cautionSize := fyne.NewSize(0, 0)
 	if n.row.isDeprecated {
 		cautionSize = fyne.NewSize(32, 32)
@@ -94,7 +96,7 @@ func (n nameTypeRowRenderer) MinSize() fyne.Size {
 		height = nameSize.Height + typSize.Height + theme.Padding()
 	}
 
-	return fyne.NewSize(width+2*theme.Padding(), height+4*theme.Padding())
+	return fyne.NewSize(width+2*theme.Padding(), height+2*theme.Padding())
 }
 
 func (n nameTypeRowRenderer) Objects() []fyne.CanvasObject {
