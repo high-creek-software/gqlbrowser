@@ -3,7 +3,9 @@ package internal
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/high-creek-software/gqlbrowser/internal/resources"
@@ -12,10 +14,16 @@ import (
 type nameTypeRow struct {
 	widget.BaseWidget
 
-	name              string
-	typ               string
-	isDeprecated      bool
-	deprecationReason *string
+	//name              string
+	//typ               string
+	//isDeprecated      bool
+	//deprecationReason *string
+
+	nameLbl         *widget.Label
+	typeTxt         *canvas.Text
+	deprecatedIcon  *widget.Icon
+	deprecatedText  *widget.Label
+	descriptionText *widget.Label
 }
 
 func (n *nameTypeRow) Cursor() desktop.Cursor {
@@ -23,94 +31,60 @@ func (n *nameTypeRow) Cursor() desktop.Cursor {
 }
 
 func (n *nameTypeRow) CreateRenderer() fyne.WidgetRenderer {
-	cautionIcon := widget.NewIcon(resources.CautionResource)
-	return &nameTypeRowRenderer{
-		row:         n,
-		nameLbl:     widget.NewLabel(n.name),
-		typLbl:      canvas.NewText(n.typ, theme.PrimaryColor()),
-		cautionIcon: cautionIcon,
+	n.nameLbl = widget.NewLabel("")
+	n.typeTxt = canvas.NewText("", theme.Color(theme.ColorNamePrimary))
+	n.deprecatedIcon = widget.NewIcon(resources.CautionResource)
+	n.deprecatedText = widget.NewLabel("")
+	n.deprecatedText.SizeName = theme.SizeNameCaptionText
+	n.deprecatedText.Wrapping = fyne.TextWrapWord
+	n.deprecatedText.TextStyle = fyne.TextStyle{Italic: true}
+	n.descriptionText = widget.NewLabel("")
+	n.descriptionText.SizeName = theme.SizeNameCaptionText
+	n.descriptionText.Wrapping = fyne.TextWrapWord
+
+	nameBox := container.NewHBox(n.nameLbl, n.typeTxt)
+	//nameBox := container.NewGridWrap(fyne.Size{Height: 32, Width: 64}, n.nameLbl, n.typeTxt)
+	depBox := container.New(
+		layout.NewCustomPaddedLayout(0, 0, 8, 0),
+		container.NewBorder(nil, nil, n.deprecatedIcon, nil, n.deprecatedText),
+	)
+
+	return widget.NewSimpleRenderer(
+		container.NewVBox(
+			nameBox,
+			depBox,
+			n.descriptionText,
+		),
+	)
+}
+
+func (n *nameTypeRow) SetData(name, typ, deprecationReason, description string, isDeprecated bool) {
+	n.nameLbl.SetText(name)
+	n.typeTxt.Text = typ
+	n.deprecatedText.SetText(deprecationReason)
+	n.descriptionText.SetText(description)
+	if isDeprecated {
+		n.deprecatedIcon.Show()
+		if deprecationReason != "" {
+			n.deprecatedText.Show()
+		} else {
+			n.deprecatedText.Hide()
+		}
+	} else {
+		n.deprecatedIcon.Hide()
+		n.deprecatedText.Hide()
+	}
+
+	if description == "" {
+		n.descriptionText.Hide()
+	} else {
+		n.descriptionText.Show()
 	}
 }
 
-func newNameTypeRow(name, typ string) *nameTypeRow {
-	r := &nameTypeRow{name: name, typ: typ}
+func newNameTypeRow() *nameTypeRow {
+	r := &nameTypeRow{}
 	r.ExtendBaseWidget(r)
 
 	return r
-}
-
-type nameTypeRowRenderer struct {
-	row         *nameTypeRow
-	nameLbl     *widget.Label
-	typLbl      *canvas.Text
-	cautionIcon *widget.Icon
-}
-
-func (n nameTypeRowRenderer) Destroy() {
-
-}
-
-func (n nameTypeRowRenderer) Layout(size fyne.Size) {
-	nameSize := fyne.MeasureText(n.nameLbl.Text, theme.TextSize(), n.nameLbl.TextStyle)
-	typeSize := fyne.MeasureText(n.typLbl.Text, theme.TextSize(), n.typLbl.TextStyle)
-	cautionSize := fyne.NewSize(0, 0)
-	if n.row.isDeprecated {
-		cautionSize = fyne.NewSize(32, 32)
-	}
-
-	useTwoLines := cautionSize.Width+nameSize.Width+typeSize.Width+5*theme.Padding() > size.Width
-
-	topLeft := fyne.NewPos(theme.Padding(), theme.Padding())
-
-	if n.row.isDeprecated {
-		n.cautionIcon.Resize(cautionSize)
-		n.cautionIcon.Move(topLeft)
-		topLeft = topLeft.AddXY(32, 0)
-	}
-
-	n.nameLbl.Move(topLeft)
-	if useTwoLines {
-		topLeft = fyne.NewPos(topLeft.X+8, nameSize.Height+2*theme.Padding()+10)
-	} else {
-		topLeft = topLeft.Add(fyne.NewPos(nameSize.Width+theme.Padding()+12, 8))
-	}
-
-	n.typLbl.Move(topLeft)
-}
-
-func (n nameTypeRowRenderer) MinSize() fyne.Size {
-	// nameSize := fyne.MeasureText(n.nameLbl.Text, theme.TextSize(), n.nameLbl.TextStyle)
-	// typSize := fyne.MeasureText(n.typLbl.Text, theme.TextSize(), n.typLbl.TextStyle)
-	nameSize := n.nameLbl.MinSize()
-	typSize := n.typLbl.MinSize()
-	cautionSize := fyne.NewSize(0, 0)
-	if n.row.isDeprecated {
-		cautionSize = fyne.NewSize(32, 32)
-	}
-
-	width := fyne.Max(cautionSize.Width+nameSize.Width, typSize.Width)
-	height := fyne.Max(nameSize.Height, typSize.Height)
-	height = fyne.Max(height, cautionSize.Height)
-
-	if n.typLbl.Position().Y > n.nameLbl.Position().Y+8 {
-		height = nameSize.Height + typSize.Height + theme.Padding()
-	}
-
-	return fyne.NewSize(width+2*theme.Padding(), height+2*theme.Padding())
-}
-
-func (n nameTypeRowRenderer) Objects() []fyne.CanvasObject {
-	return []fyne.CanvasObject{n.nameLbl, n.typLbl, n.cautionIcon}
-}
-
-func (n nameTypeRowRenderer) Refresh() {
-	n.nameLbl.SetText(n.row.name)
-	n.typLbl.Text = n.row.typ
-	n.typLbl.Refresh()
-
-	if n.row.isDeprecated {
-		n.cautionIcon.Show()
-	} else {
-		n.cautionIcon.Hide()
-	}
 }

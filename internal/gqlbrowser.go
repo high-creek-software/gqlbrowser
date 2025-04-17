@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/high-creek-software/bento"
@@ -22,6 +23,10 @@ type GQLBrowser struct {
 	mainWindow  fyne.Window
 	setupWindow fyne.Window
 	manager     storage.Manager
+
+	stack             *fyne.Container
+	settingsContainer *fyne.Container
+	mainContainer     *fyne.Container
 
 	endpoints []storage.Endpoint
 
@@ -64,10 +69,14 @@ func NewGQLBrowser() *GQLBrowser {
 }
 
 func (g *GQLBrowser) setupBody() {
+
 	g.pathCombo = widget.NewSelect(nil, g.pathSelected)
 	g.pathCombo.PlaceHolder = "Select path to inspect..."
 
-	settingsBtn := widget.NewButtonWithIcon("", theme.SettingsIcon(), g.settingsTouched)
+	settingsBtn := widget.NewButtonWithIcon("", theme.SettingsIcon(), func() {
+		g.mainContainer.Hide()
+		g.settingsContainer.Show()
+	})
 	form := container.NewBorder(nil, nil, nil, settingsBtn, g.pathCombo)
 
 	g.typeTabs = container.NewDocTabs()
@@ -84,8 +93,52 @@ func (g *GQLBrowser) setupBody() {
 	split := container.NewHSplit(g.typeTabs, displayScroll)
 	split.SetOffset(0.24)
 
-	border := container.NewBorder(container.NewPadded(form), nil, nil, nil, container.NewPadded(split))
-	g.mainWindow.SetContent(border)
+	g.mainContainer = container.NewBorder(container.NewPadded(form), nil, nil, nil, container.NewPadded(split))
+
+	/* Setup endpoint management */
+	g.setupBento = bento.NewBox()
+
+	pathLbl := widget.NewLabel("URL")
+	pathEntry := widget.NewEntry()
+
+	g.endpointAdapter = newEndpointAdapter(g.refreshEndpoint, g.deleteEndpoint)
+	g.endpointAdapter.resetAll(g.endpoints)
+	g.endpointTable = widget.NewTableWithHeaders(g.endpointAdapter.count, g.endpointAdapter.createTemplate, g.endpointAdapter.updateTemplate)
+	g.endpointTable.CreateHeader = g.endpointAdapter.createHeader
+	g.endpointTable.UpdateHeader = g.endpointAdapter.updateHeader
+	g.endpointTable.SetColumnWidth(0, 450)
+	g.endpointTable.SetColumnWidth(1, 200)
+	g.endpointTable.SetColumnWidth(2, 200)
+
+	saveBtn := widget.NewButtonWithIcon("Save", theme.DocumentSaveIcon(), func() {
+		path := pathEntry.Text
+		if path == "" {
+			return
+		}
+
+		g.addEndpoint(path)
+	})
+
+	backBtn := widget.NewButtonWithIcon("", theme.NavigateBackIcon(), func() {
+		g.settingsContainer.Hide()
+		g.mainContainer.Show()
+	})
+
+	g.settingsContainer = container.NewPadded(
+		container.NewBorder(
+			container.NewBorder(nil, nil, container.NewBorder(nil, nil, backBtn, nil, pathLbl), saveBtn, pathEntry),
+			nil,
+			nil,
+			nil,
+			container.NewPadded(g.endpointTable),
+		),
+	)
+
+	g.settingsContainer.Hide()
+
+	g.stack = container.New(layout.NewStackLayout(), g.mainContainer, g.settingsContainer)
+
+	g.mainWindow.SetContent(g.stack)
 }
 
 func (g *GQLBrowser) showRawSchema() {
@@ -222,52 +275,6 @@ func (g *GQLBrowser) showType(t fieldglass.Type, f *fieldglass.Field) {
 	g.displayContainer.Add(detail)
 }
 
-func (g *GQLBrowser) settingsTouched() {
-	if g.setupWindow != nil {
-		return
-	}
-	g.setupBento = bento.NewBox()
-
-	g.setupWindow = g.app.NewWindow("Setup")
-	g.setupWindow.SetOnClosed(g.setupClosed)
-	g.setupWindow.Resize(fyne.NewSize(1200, 750))
-
-	pathLbl := widget.NewLabel("URL:")
-	pathEntry := widget.NewEntry()
-
-	// pathItem := widget.NewFormItem("URL:", pathEntry)
-	// inputForm := widget.NewForm(pathItem)
-
-	g.endpointAdapter = newEndpointAdapter(g.refreshEndpoint, g.deleteEndpoint)
-	g.endpointAdapter.resetAll(g.endpoints)
-	g.endpointTable = widget.NewTableWithHeaders(g.endpointAdapter.count, g.endpointAdapter.createTemplate, g.endpointAdapter.updateTemplate)
-	g.endpointTable.CreateHeader = g.endpointAdapter.createHeader
-	g.endpointTable.UpdateHeader = g.endpointAdapter.updateHeader
-	g.endpointTable.SetColumnWidth(0, 450)
-	g.endpointTable.SetColumnWidth(1, 200)
-	g.endpointTable.SetColumnWidth(2, 200)
-
-	saveBtn := widget.NewButtonWithIcon("Save", theme.DocumentSaveIcon(), func() {
-		path := pathEntry.Text
-		if path == "" {
-			return
-		}
-
-		g.addEndpoint(path)
-	})
-
-	mainContent := container.NewBorder(
-		container.NewBorder(nil, nil, pathLbl, saveBtn, pathEntry),
-		nil,
-		nil,
-		nil,
-		container.NewPadded(g.endpointTable),
-	)
-	g.setupWindow.SetContent(container.NewMax(mainContent, g.setupBento))
-
-	g.setupWindow.Show()
-}
-
 func (g *GQLBrowser) refreshEndpoint(e storage.Endpoint) {
 	err := g.manager.Update(e)
 	if err != nil {
@@ -328,6 +335,8 @@ func (g *GQLBrowser) loadEndpoints() {
 	if g.endpointTable != nil {
 		g.endpointTable.Refresh()
 	}
+
+	g.updatePathList()
 }
 
 func (g *GQLBrowser) updatePathList() {

@@ -26,14 +26,17 @@ func (ta *topTypesAdapter) count() int {
 }
 
 func (ta *topTypesAdapter) createTemplate() fyne.CanvasObject {
-	return newNameTypeRow("", "temp")
+	return newNameTypeRow()
 }
 
 func (ta *topTypesAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {
 	t := ta.getItem(id)
 	row := co.(*nameTypeRow)
-	row.typ = *t.Name
+	row.SetData("", *t.Name, "", "", false)
 	row.Refresh()
+	if ta.list != nil {
+		ta.list.SetItemHeight(id, row.MinSize().Height)
+	}
 }
 
 func (ta *topTypesAdapter) getItem(id widget.ListItemID) fieldglass.Type {

@@ -31,7 +31,7 @@ func (fa *fullFieldAdapter) count() int {
 }
 
 func (fa *fullFieldAdapter) createTemplate() fyne.CanvasObject {
-	return newDetailRow("template", "template", nil)
+	return newDetailRow()
 }
 
 func (fa *fullFieldAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {

@@ -31,7 +31,7 @@ func (fa *fieldAdapter) count() int {
 }
 
 func (fa *fieldAdapter) createTemplate() fyne.CanvasObject {
-	return newNameTypeRow("temp", "temp")
+	return newNameTypeRow()
 }
 
 func (fa *fieldAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {
@@ -41,11 +41,15 @@ func (fa *fieldAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObjec
 		args = "(...)"
 	}
 	row := co.(*nameTypeRow)
-	row.name = f.Name + args + ":"
-	row.typ = f.Type.FormatName()
-	row.isDeprecated = f.IsDeprecated
-	row.deprecationReason = f.DeprecationReason
-	row.Refresh()
+	depReason := ""
+	if f.DeprecationReason != nil {
+		depReason = *f.DeprecationReason
+	}
+	description := ""
+	if f.Description != nil {
+		description = *f.Description
+	}
+	row.SetData(f.Name+args+":", f.Type.FormatName(), depReason, description, f.IsDeprecated)
 	if fa.list != nil {
 		fa.list.SetItemHeight(id, row.MinSize().Height)
 	}

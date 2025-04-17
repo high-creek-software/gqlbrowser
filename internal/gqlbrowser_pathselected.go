@@ -5,16 +5,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"gitlab.com/high-creek-software/fieldglass"
+	"slices"
+	"strings"
 )
 
 func (g *GQLBrowser) pathSelected(path string) {
-	/*var endpoint storage.Endpoint
-	for _, e := range g.endpoints {
-		if e.Path == path {
-			endpoint = e
-			break
-		}
-	}*/
 	endpoint := g.endpoints[g.pathCombo.SelectedIndex()]
 	g.saveSelectedEndpoint(path)
 	g.displayContainer.RemoveAll()
@@ -32,6 +27,9 @@ func (g *GQLBrowser) pathSelected(path string) {
 	g.tabs = nil
 	query, err := g.schema.GetQuery()
 	if err == nil {
+		slices.SortFunc(query.Fields, func(a, b fieldglass.Field) int {
+			return strings.Compare(a.Name, b.Name)
+		})
 		g.queryAdapter = &fieldAdapter{fields: query.Fields}
 		queryTab := container.NewTabItem("Query", newFilterableListLayout[fieldglass.Field](g.queryAdapter, g.querySelected))
 		g.tabs = append(g.tabs, queryTab)
@@ -40,6 +38,9 @@ func (g *GQLBrowser) pathSelected(path string) {
 
 	mutation, _ := g.schema.GetMutation()
 	if g.schema.HasMutations() {
+		slices.SortFunc(mutation.Fields, func(a, b fieldglass.Field) int {
+			return strings.Compare(a.Name, b.Name)
+		})
 		g.mutationAdapter = &fieldAdapter{fields: mutation.Fields}
 		mutationTab := container.NewTabItem("Mutation", newFilterableListLayout[fieldglass.Field](g.mutationAdapter, g.mutationSelected))
 		g.tabs = append(g.tabs, mutationTab)

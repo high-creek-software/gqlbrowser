@@ -24,7 +24,7 @@ func (ia *inputAdapter) count() int {
 }
 
 func (ia *inputAdapter) createTemplate() fyne.CanvasObject {
-	return newDetailRow("temp", "temp", nil)
+	return newDetailRow()
 }
 
 func (ia *inputAdapter) updateTemplate(id widget.ListItemID, co fyne.CanvasObject) {
